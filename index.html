@@ -2244,6 +2244,8 @@ function openHiddenModal(hqId) {
         renderRoom();  // re-attach hq triggers with updated answered state
         return;
       }
+      // Guard: another player may have answered before this event was processed
+      if (S.hiddenAnswers[hqId]) return;
       S.socket.emit('hidden_q_submit', { hqId, option: ch.opt });
       setFeedback(t('hq.submitting'), 'ok');
       // Disable choices to prevent re-submit
@@ -2926,13 +2928,16 @@ function connectSocket() {
     // Recompute hiddenBonus total
     S.hiddenBonus = Object.values(S.hiddenAnswers).reduce((sum, r) => sum + (r && r.bonusPts ? r.bonusPts : 0), 0);
     renderRoom();  // re-attach hq triggers with updated answered state
-    // If this player's modal for this HQ is currently open, update it
+    // If this player's modal for this HQ is currently open, lock it — answer is now resolved
     if (window._currentHqId === hqId) {
       const fb = document.getElementById('modal-feedback');
       if (fb) {
         fb.textContent = result.isCorrect ? t('hq.answered_correct') : t('hq.answered_wrong');
         fb.className   = result.isCorrect ? 'ok' : 'bad';
       }
+      // Disable all choice buttons so no late submission is possible
+      const choicesEl = document.getElementById('modal-choices');
+      if (choicesEl) choicesEl.querySelectorAll('button').forEach(b => { b.disabled = true; });
     }
     // Log the outcome
     const who = escHtml(result.answeredBy);

@@ -721,13 +721,18 @@ io.on('connection', (socket) => {
     }
 
     const isCorrect = String(option).toLowerCase() === HQ_ANSWERS[hqId];
+    // Derive roomId from hqId prefix, e.g. hq_receiving_1 → receiving
+    const roomId = hqId.replace(/^hq_/, '').replace(/_\d+$/, '');
     gs.hiddenAnswers[hqId] = {
+      groupId,
+      bonusQuestionId: hqId,
+      roomId,
       answeredBy:      memberName,
       isCorrect,
       bonusPts:        isCorrect ? HQ_BONUS : 0,
       submittedOption: String(option).toLowerCase(),
       correctOption:   HQ_ANSWERS[hqId],
-      submittedAt:     Date.now(),
+      answeredAt:      Date.now(),
     };
 
     io.to(groupId).emit('hidden_q_state', { hqId, result: gs.hiddenAnswers[hqId] });
