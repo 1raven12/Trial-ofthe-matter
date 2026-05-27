@@ -1464,9 +1464,9 @@ const ROOM_PUZZLES = {
 };
 
 function getMissingInRoom(roomId) {
-  // A puzzle counts as done if I personally completed it OR the whole group completed it.
-  // Group-complete implies all roster members (including me) did it, so S.solved is a valid fallback.
-  return (ROOM_PUZZLES[roomId] || []).filter(k => !S.mySolved[k] && !S.solved[k]);
+  // Group-level: only S.solved (all locked players done) gates room departure.
+  // S.mySolved is used only for per-player hotspot state, not for navigation.
+  return (ROOM_PUZZLES[roomId] || []).filter(k => !S.solved[k]);
 }
 
 function goTo(roomId) {
@@ -1477,7 +1477,14 @@ function goTo(roomId) {
   if (targetIdx > currentIdx) {
     const missing = getMissingInRoom(S.room);
     if (missing.length > 0) {
-      showAlarm(missing, 'depart');
+      // Differentiate: show alarm only for puzzles I haven't personally done yet.
+      // If I've done them all but teammates haven't, show a waiting message instead.
+      const myMissing = missing.filter(k => !S.mySolved[k]);
+      if (myMissing.length > 0) {
+        showAlarm(myMissing, 'depart');
+      } else {
+        log(t('msg.waiting_for_team'), 'warn');
+      }
       return;
     }
   }
