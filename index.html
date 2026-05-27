@@ -2572,6 +2572,7 @@ function openModal({ tag, title, body, questionKey, placeholder, submitLabel, on
     inp.placeholder   = placeholder || '';
     inp.value         = '';
     sub.style.display = 'inline-block';
+    sub.disabled      = false;
     setTimeout(() => inp.focus(), 60);
   }
 
