@@ -1085,7 +1085,7 @@ function calcScore(won) {
     (S.puzzlesDone * ptPer) +
     timeBonus +
     (S.hiddenBonus || 0) -
-    (S.wrongAnswers * 50) -
+    (S.wrongAnswers * WRONG_PTS_CLIENT) -
     (S.hintPenalty || 0) -
     otPenalty
   );
@@ -2622,9 +2622,10 @@ document.getElementById('modal-cancel').onclick = closeModal;
 // TIMER
 // ────────────────────────────────────────────────
 // REG_SECS = 30*60 = 1800, MAX_SECS = 60*60 = 3600, OT_THRESH = 1800
-const REG_SECS_CLIENT = 30 * 60;
-const MAX_SECS_CLIENT = 60 * 60;
+const REG_SECS_CLIENT  = 30 * 60;
+const MAX_SECS_CLIENT  = 60 * 60;
 const OT_THRESH_CLIENT = MAX_SECS_CLIENT - REG_SECS_CLIENT; // 1800
+const WRONG_PTS_CLIENT = 50;  // must match server WRONG_PTS
 
 function startTimer() {
   S.timerInt = setInterval(() => {
@@ -2691,7 +2692,7 @@ function showEndScreen(won, data) {
   const ptPerPuzzle      = isOvertime ? 180 : 200;
   const regSecsLeft      = isOvertime ? 0 : (secondsRemaining - OT_THRESH_CLIENT);
   const timeBonusPts     = (won && !isOvertime) ? regSecsLeft * 2 : 0;
-  const penaltyPts       = wrongAnswers * 50;
+  const penaltyPts       = wrongAnswers * WRONG_PTS_CLIENT;
   const overtimeSecs     = isOvertime ? (OT_THRESH_CLIENT - secondsRemaining) : 0;
   const overtimePenalty  = Math.ceil(overtimeSecs / 60) * 30;
   const timeSpentSec     = data.timeSpentSec || (MAX_SECS_CLIENT - secondsRemaining);
@@ -2975,6 +2976,15 @@ function connectSocket() {
 
   sock.on('chat', msg => {
     appendChat(msg.from, msg.text, msg.ts, msg.from === S.memberName);
+  });
+
+  sock.on('wrong_answer_notify', ({ by, penalty, total }) => {
+    S.wrongAnswers = total;   // sync group counter
+    const msg = t('score.wrong_by')
+      .replace('{name}', escHtml(by))
+      .replace('{penalty}', penalty);
+    log(msg, 'fail');
+    updateLiveScore();
   });
 
   sock.on('hint_broadcast', ({ room, timeCost, ptsCost, fromName }) => {

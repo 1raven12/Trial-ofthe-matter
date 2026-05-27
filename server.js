@@ -696,7 +696,14 @@ io.on('connection', (socket) => {
   // ── Wrong answer ──────────────────────────────────────────────────────────
   socket.on('wrong_answer', () => {
     const gs = groupSessions.get(groupId);
-    if (gs && !gs.paused) gs.wrongAnswers++;
+    if (!gs || gs.paused) return;
+    gs.wrongAnswers++;
+    // Broadcast to entire group so every player sees who got it wrong and the penalty
+    io.to(groupId).emit('wrong_answer_notify', {
+      by:      memberName,
+      penalty: WRONG_PTS,
+      total:   gs.wrongAnswers,
+    });
   });
 
   // ── Hint used ─────────────────────────────────────────────────────────────
