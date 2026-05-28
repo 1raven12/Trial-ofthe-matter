@@ -1,13 +1,13 @@
 /**
  * locale-regression.js
  *
- * Regression suite for the four fixes and live-scoring work across all 16
+ * Regression suite for the four fixes and live-scoring work across all 17
  * supported locales of the MediSeal Quality Week escape-room game.
  *
  * What it tests
  * ─────────────
  * PHASE 1 – Static analysis (fast, no browser)
- *   1a. All 16 languages present in translations.js
+ *   1a. All 17 languages present in translations.js
  *   1b. Required new keys (score.wrong_by, score.live_label, msg.waiting_for_team)
  *       exist in every language block
  *   1c. .hq-spot-art-corner CSS has opacity > 0 (Fix 4)
@@ -16,7 +16,7 @@
  *   1f. S.solved (not S.mySolved) is used inside getMissingInRoom (Fix 3)
  *   1g. modal-submit button is re-enabled in openModal text-input branch (Fix 1)
  *
- * PHASE 2 – Browser tests via Playwright (Demo mode, all 16 locales)
+ * PHASE 2 – Browser tests via Playwright (Demo mode, all 17 locales)
  *   2a. Fix 1 – Clicking #modal-submit works without pressing Enter
  *   2b. Fix 4 – .hq-spot-art-corner is visible with emoji text content
  *   2c. Fix 3 – goTo() shows team-waiting message (not alarm) when I'm done
@@ -47,9 +47,9 @@ const ADMIN_PW = 'QWAdmin2024';
 const TRIAL_GROUP = 'g256';
 const TRIAL_PIN   = '1256';
 
-// ── 16 supported languages (source of truth: login-screen <select>) ─────────
+// ── 17 supported languages (source of truth: login-screen <select>) ─────────
 const LANGS = [
-  'en', 'de', 'fr', 'es', 'da', 'pt-BR', 'ko', 'kn',
+  'en', 'de', 'fr', 'es', 'da', 'pt-BR', 'ko', 'kn', 'te',
   'zh-Hans', 'zh-Hant', 'ms', 'ta', 'hi', 'he', 'sr-Latn', 'sr-Cyrl',
 ];
 const RTL_LANGS = new Set(['he']);
@@ -116,7 +116,7 @@ function phase1() {
   const indexSrc = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   const transSrc = fs.readFileSync(path.join(__dirname, '..', 'translations.js'), 'utf8');
 
-  // 1a — All 16 language blocks present in translations.js
+  // 1a — All 17 language blocks present in translations.js
   // Keys are unquoted for simple identifiers (de, fr, ko…) and
   // single-quoted for hyphenated locales ('pt-BR', 'zh-Hans', etc.)
   for (const lang of LANGS) {
@@ -130,15 +130,15 @@ function phase1() {
     }
   }
 
-  // 1b — Required new translation keys in all 16 languages
+  // 1b — Required new translation keys in all 17 languages
   const requiredKeys = ['score.wrong_by', 'score.live_label', 'msg.waiting_for_team'];
   for (const key of requiredKeys) {
     const pattern = `'${key}'`;
     const occurrences = (transSrc.match(new RegExp(pattern.replace('.', '\\.'), 'g')) || []).length;
-    if (occurrences === 16) {
-      pass(`1b key '${key}' present in all 16 languages`);
+    if (occurrences === 17) {
+      pass(`1b key '${key}' present in all 17 languages`);
     } else {
-      fail(`1b key '${key}' found in ${occurrences}/16 languages`);
+      fail(`1b key '${key}' found in ${occurrences}/17 languages`);
     }
   }
 
@@ -263,10 +263,10 @@ function phase1() {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// PHASE 2 — Browser tests (all 16 locales, Demo mode)
+// PHASE 2 — Browser tests (all 17 locales, Demo mode)
 // ────────────────────────────────────────────────────────────────────────────
 async function phase2() {
-  section('PHASE 2 — Browser tests via Playwright (all 16 locales)');
+  section('PHASE 2 — Browser tests via Playwright (all 17 locales)');
 
   const browser = await chromium.launch({
     headless: true,
