@@ -1057,6 +1057,9 @@ document.addEventListener('DOMContentLoaded', () => {
       S.lang = sel.value;
       localStorage.setItem('qw_lang', S.lang);
       applyTranslations();
+      // re-render group dropdown placeholder in current language
+      const gs = document.getElementById('group-select');
+      if (gs && gs.options.length > 0) gs.options[0].text = t('login.select_group_placeholder');
       // re-render nav/room if game already started
       if (document.getElementById('game-layout') &&
           document.getElementById('game-layout').style.display !== 'none') {
