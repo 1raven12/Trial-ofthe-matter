@@ -9671,11 +9671,11 @@ const TRANSLATIONS = {
     'start.lobby_hint':     'ప్రారంభించే ముందు <strong>3–5 సభ్యుల</strong> బృందం అందరూ కనెక్ట్ అయి ఉండాలి.<br>అందరూ ఒకేసారి <strong>నేను సిద్ధం</strong> క్లిక్ చేయాలి.',
 
     /* Room names */
-    'room.receiving':   'Receiving Dock',
-    'room.production':  'Production Line',
-    'room.qclab':       'Quality Control Laboratory',
-    'room.qaoffice':    'QA & Compliance Office',
-    'room.dispatch':    'Dispatch & Release Bay',
+    'room.receiving':   'రిసీవింగ్ డాక్',
+    'room.production':  'ఉత్పత్తి లైన్',
+    'room.qclab':       'నాణ్యత నియంత్రణ ప్రయోగశాల',
+    'room.qaoffice':    'QA మరియు అనుసరణ కార్యాలయం',
+    'room.dispatch':    'డిస్పాచ్ మరియు విడుదల వే',
 
     /* Hotspot labels */
     'hs.inspect_pallet':     'Inspect Pallet (Rubber Compound)',
@@ -10107,11 +10107,11 @@ const TRANSLATIONS = {
     'side.no_entries_html': 'ఇంకా నమోదులు లేవు.',
 
     /* Room badges */
-    'room.badge.receiving':  'AREA 01 — RECEIVING DOCK',
-    'room.badge.production': 'AREA 02 — PRODUCTION LINE',
-    'room.badge.qclab':      'AREA 03 — QC LABORATORY',
-    'room.badge.qaoffice':   'AREA 04 — QA / COMPLIANCE',
-    'room.badge.dispatch':   'AREA 05 — DISPATCH / RELEASE',
+    'room.badge.receiving':  'ప్రాంతం 01 — రిసీవింగ్ డాక్',
+    'room.badge.production': 'ప్రాంతం 02 — ఉత్పత్తి లైన్',
+    'room.badge.qclab':      'ప్రాంతం 03 — QC ప్రయోగశాల',
+    'room.badge.qaoffice':   'ప్రాంతం 04 — QA / అనుసరణ',
+    'room.badge.dispatch':   'ప్రాంతం 05 — డిస్పాచ్ / విడుదల',
 
     /* Room descriptions */
     'room.desc.receiving':  'Raw materials arrive here for incoming quality control. Under GMP, every incoming batch must have a Certificate of Analysis (CoA) reviewed and verified before the material can be released to production. A red HOLD light flashes above the pallet of rubber compound. The GMP terminal on the wall reads: "MATERIAL ON HOLD — VERIFICATION REQUIRED." A Quality Week banner on the wall displays the site motto: "Progress in every step · Quality in every detail."',
