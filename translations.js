@@ -9704,14 +9704,14 @@ const TRANSLATIONS = {
     'hs.read_qw_banner':     'Quality Week Banner',
 
     /* Navigation */
-    'nav.you_are_in':   'You are in:',
-    'nav.exits':        'Exits',
-    'nav.hint_btn':     '💡 Use Hint (−60s / −50 pts)',
-    'nav.hint_used':    '(hint used)',
-    'nav.lock.production': 'Raw material verification required first (GMP Receiving Terminal).',
-    'nav.lock.qclab':      'File the NCR at the NCR Filing Station on the production line first.',
-    'nav.lock.qaoffice':   'Complete instrument calibration in the QC Lab first (Micrometer Station).',
-    'nav.lock.dispatch':   'Complete and authorise the CAPA report in the QA Office first.',
+    'nav.you_are_in':   'మీరు ఉన్న ప్రాంతం:',
+    'nav.exits':        'నిష్క్రమణలు',
+    'nav.hint_btn':     '💡 సూచన వాడండి (−60s / −50 పాయింట్లు)',
+    'nav.hint_used':    '(సూచన వాడారు)',
+    'nav.lock.production': 'ముందు ముడి పదార్థ ధృవీకరణ అవసరం (GMP రిసీవింగ్ టెర్మినల్).',
+    'nav.lock.qclab':      'ముందు ఉత్పత్తి లైన్‌లోని NCR ఫైలింగ్ స్టేషన్‌లో NCR దాఖలు చేయండి.',
+    'nav.lock.qaoffice':   'ముందు QC ల్యాబ్‌లో పరికరాల క్రమాంకనం పూర్తి చేయండి (మైక్రోమీటర్ స్టేషన్).',
+    'nav.lock.dispatch':   'ముందు QA కార్యాలయంలో CAPA నివేదిక పూర్తి చేసి అధికారపర్చండి.',
 
     /* Alarm overlay */
     'alarm.title':      '⚠ STOP — GO BACK!',
@@ -9722,7 +9722,7 @@ const TRANSLATIONS = {
     'alarm.ok':         '✓ UNDERSTOOD — I WILL GO BACK NOW',
 
     /* Progress bar */
-    'progress': 'Quality checks: {done} / {total} complete',
+    'progress': 'నాణ్యత తనిఖీలు: {done} / {total} పూర్తయ్యాయి',
 
     /* Hints */
     'hint.receiving':  'The AQL chart and the CoA you receive both describe the same material — compare their numbers before making a decision.',
@@ -9987,7 +9987,7 @@ const TRANSLATIONS = {
 
     /* Modal defaults */
     'modal.default_tag': 'QUALITY CONTROL',
-    'nav.blocked':       'Blocked.',
+    'nav.blocked':       'అడ్డుపడ్డారు.',
 
     /* Puzzle correct/wrong feedback messages */
     'fb.gmp_ok':           '✓ Correct lot number! Notifying team — waiting for all members to confirm…',
@@ -10098,10 +10098,10 @@ const TRANSLATIONS = {
     'hint.penalty_log': '⚠️ Hint penalty applied: −{time}s and −{pts} pts.',
 
     /* Room path tooltips */
-    'nav.here':     ' — YOU ARE HERE',
-    'nav.visited':  ' — visited',
-    'nav.unlocked': ' — unlocked',
-    'nav.locked':   ' — locked',
+    'nav.here':     ' — మీరు ఇక్కడ ఉన్నారు',
+    'nav.visited':  ' — సందర్శించారు',
+    'nav.unlocked': ' — తెరవబడింది',
+    'nav.locked':   ' — తాళంలో ఉంది',
 
     /* Notes fallback */
     'side.no_entries_html': 'ఇంకా నమోదులు లేవు.',
