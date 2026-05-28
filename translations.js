@@ -10095,7 +10095,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 లీడర్‌బోర్డ్ చూడండి',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{time}s మరియు −{pts} పాయింట్లు.',
+    'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{time}సె మరియు −{pts} పాయింట్లు.',
 
     /* Room path tooltips */
     'nav.here':     ' — మీరు ఇక్కడ ఉన్నారు',
