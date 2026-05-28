@@ -2753,7 +2753,7 @@ function showEndScreen(won, data) {
   document.getElementById('end-msg').textContent   = won ? t('end.msg_won') : t('end.msg_lost');
 
   let statsHtml =
-    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">' + t('end.score_title') + ' — ' + (S.demoMode ? 'DEMO' : escHtml(S.groupName || '')) + '</strong><br>' +
+    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">' + t('end.score_title') + ' — ' + (S.demoMode ? t('end.demo_note').split(' — ')[0] : escHtml(S.groupName || '')) + '</strong><br>' +
     t('end.puzzles_n').replace('{n}', puzzlesDone).replace('{pts}', ptPerPuzzle) + ': <span>+' + (puzzlesDone * ptPerPuzzle).toLocaleString() + ' ' + pts + '</span><br>';
 
   if (won && !isOvertime) {
