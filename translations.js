@@ -9725,11 +9725,11 @@ const TRANSLATIONS = {
     'progress': 'నాణ్యత తనిఖీలు: {done} / {total} పూర్తయ్యాయి',
 
     /* Hints */
-    'hint.receiving':  'The AQL chart and the CoA you receive both describe the same material — compare their numbers before making a decision.',
-    'hint.production': 'The maintenance log records what was scheduled and what actually happened. A single line difference tells the whole story.',
-    'hint.qclab':      'The micrometer reads a current value. The calibration reference gives a target. The gap between them is what matters.',
-    'hint.qaoffice':   'The NCR and the CAPA are linked documents — one names the problem, the other names the solution. Trace the chain.',
-    'hint.dispatch':   'The Quality Week motto appears on every wall for a reason. Think about which ISO 9001:2015 principle drives improvement at every step.',
+    'hint.receiving':  'AQL చార్ట్ మరియు మీకు అందిన CoA రెండూ అదే పదార్థాన్ని వివరిస్తాయి — నిర్ణయం తీసుకోవడానికి ముందు వాటి సంఖ్యలు పోల్చండి.',
+    'hint.production': 'నిర్వహణ లాగ్ షెడ్యూల్ అయినది మరియు వాస్తవంగా జరిగినది రికార్డు చేస్తుంది. ఒక్క లైన్ వ్యత్యాసం మొత్తం కథ చెప్తుంది.',
+    'hint.qclab':      'మైక్రోమీటర్ ప్రస్తుత విలువ చదువుతుంది. క్రమాంకన రిఫరెన్స్ లక్ష్య విలువ ఇస్తుంది. వాటి మధ్య అంతరమే ముఖ్యం.',
+    'hint.qaoffice':   'NCR మరియు CAPA అనుసంధానిత పత్రాలు — ఒకటి సమస్యను, మరొకటి పరిష్కారాన్ని పేర్కొంటుంది. గొలుసు ట్రేస్ చేయండి.',
+    'hint.dispatch':   'నాణ్యత వారం నినాదం ప్రతి గోడపై కారణం వల్ల ఉంది. ప్రతి దశలో మెరుగుదలను నడిపించే ISO 9001:2015 సూత్రం ఏదో ఆలోచించండి.',
 
     /* Puzzle question prompts (shown below English body for non-EN) */
     'q.gmp':           'Enter the material lot number from the CoA to release the material from HOLD — type the answer in English exactly as written on the CoA:',
@@ -9977,11 +9977,11 @@ const TRANSLATIONS = {
     'end.time_taken': 'Time taken:',
     'end.demo_note': 'Demo — score not saved',
     'end.lb_link': '📊 View Leaderboard',
-    'tc.header': '🔑 TEAM CONFIRMATION REQUIRED',
-    'tc.body_html': '<strong>{name}</strong> found the answer. All {required} members must enter this code to proceed:',
-    'tc.instruction': 'Type the code above to confirm you\'ve received it:',
-    'tc.input_ph': 'Enter the code…',
-    'tc.btn': 'Confirm',
+    'tc.header': '🔑 జట్టు ధృవీకరణ అవసరం',
+    'tc.body_html': '<strong>{name}</strong> సమాధానం కనుగొన్నారు. అందరు {required} సభ్యులు ముందుకు సాగడానికి ఈ కోడ్ నమోదు చేయాలి:',
+    'tc.instruction': 'మీకు వచ్చిందని ధృవీకరించడానికి పైన ఉన్న కోడ్ టైప్ చేయండి:',
+    'tc.input_ph': 'కోడ్ నమోదు చేయండి…',
+    'tc.btn': 'ధృవీకరించు',
 
 
 
@@ -10017,7 +10017,7 @@ const TRANSLATIONS = {
     /* Team confirmation messages */
     'modal.waiting_team':  '✓ సరైంది! జట్టు వేచి ఉంది ({done}/{required} ధృవీకరించారు)…',
     'modal.confirming_team': '✓ జట్టు వేచి ఉంది ({done}/{required} ధృవీకరించారు)…',
-    'tc.progress':         '✓ {count} / {required} members confirmed',
+    'tc.progress':         '✓ {count} / {required} సభ్యులు ధృవీకరించారు',
     'chat.reconnecting':   'Reconnecting…',
     'chat.placeholder':    'Message your team…',
 
@@ -10048,8 +10048,8 @@ const TRANSLATIONS = {
     'login.server_error': 'Could not reach the server. Use Demo Mode to test the game without scoring.',
 
     /* Team confirm feedback */
-    'tc.confirmed_waiting': '✓ Confirmed! Waiting for remaining teammates…',
-    'tc.incorrect':         'Incorrect — enter the code exactly as shown above.',
+    'tc.confirmed_waiting': '✓ ధృవీకరించారు! మిగిలిన జట్టు సభ్యుల కోసం వేచి ఉన్నారు…',
+    'tc.incorrect':         'సరికాదు — పైన చూపించిన విధంగా సరిగ్గా కోడ్ నమోదు చేయండి.',
     /* Page title */
     'page.title':       'MediSeal Quality Week — Escape Room',
 
@@ -10095,7 +10095,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 View Leaderboard',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ Hint penalty applied: −{time}s and −{pts} pts.',
+    'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{time}s మరియు −{pts} పాయింట్లు.',
 
     /* Room path tooltips */
     'nav.here':     ' — మీరు ఇక్కడ ఉన్నారు',
