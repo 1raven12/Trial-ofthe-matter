@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
   <title data-t="page.title">MediSeal Quality Week — Escape Room</title>
   <style>
     /* ── Login Screen ── */
@@ -88,7 +88,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Heebo', 'Noto Sans Kannada', 'Noto Sans Tamil', 'Noto Sans Devanagari', 'Mangal', 'Sanskrit Text', 'Courier New', monospace;
+      font-family: 'Heebo', 'Noto Sans Kannada', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Devanagari', 'Mangal', 'Sanskrit Text', 'Courier New', monospace;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -110,6 +110,16 @@
     #timer { font-size: 1.5rem; color: var(--warn); font-weight: bold; letter-spacing: 3px; }
     #timer.urgent { color: var(--danger); animation: blink 0.7s infinite; }
     #timer.overtime { color: #ff7b00; animation: blink 1.2s infinite; font-size: 1.1rem; }
+    #live-score-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      font-family: 'Courier New', monospace;
+    }
+    #live-score-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); }
+    #live-score { font-size: 1.15rem; font-weight: bold; color: var(--accent2); letter-spacing: 1px; transition: color 0.4s; }
+    #live-score.gain { color: #00c97a; }
+    #live-score.loss { color: var(--danger); }
+    @keyframes scoreFlash { 0%{opacity:1} 40%{opacity:0.2} 100%{opacity:1} }
+    #live-score.flash { animation: scoreFlash 0.4s ease; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
     @keyframes alarmPulse { 0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,0.9),0 0 40px rgba(230,57,70,0.6)} 50%{box-shadow:0 0 0 18px rgba(230,57,70,0),0 0 80px rgba(230,57,70,0.2)} }
     @keyframes alarmBorder { 0%,100%{border-color:#e63946} 50%{border-color:#ff7b00} }
@@ -297,24 +307,30 @@
     .hq-spot-hs-suffix:hover { opacity: 0.7; background: rgba(255,215,0,0.07); }
     .hq-spot-hs-suffix.hq-done { opacity: 0.4; }
 
-    /* Type 4: invisible corner area in room-art */
+    /* Type 4: visible emoji in corner of room-art */
     .hq-spot-art-corner {
       position: absolute;
-      bottom: 6px; right: 10px;
-      width: 48px; height: 48px;
+      bottom: 8px; right: 12px;
+      width: 40px; height: 40px;
       z-index: 10;
       cursor: pointer;
-      opacity: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
       border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      opacity: 0.85;
+      transition: opacity 0.2s, background 0.2s;
       -webkit-tap-highlight-color: transparent;
     }
-    .hq-spot-art-corner:hover {
-      opacity: 0.15;
-      background: radial-gradient(circle, rgba(255,215,0,0.6) 0%, transparent 70%);
+    .hq-spot-art-corner:hover, .hq-spot-art-corner:focus {
+      opacity: 1;
+      background: rgba(255,215,0,0.18);
+      outline: none;
     }
     .hq-spot-art-corner.hq-done {
-      opacity: 0.2;
-      background: radial-gradient(circle, rgba(0,200,100,0.6) 0%, transparent 70%);
+      opacity: 0.45;
+      background: rgba(0,200,100,0.15);
     }
 
     /* ── Activity Log ── */
@@ -566,6 +582,8 @@
     [dir="rtl"] #end-stats { text-align: right; }
     [dir="rtl"] .alarm-rooms { text-align: right; }
     [dir="rtl"] .start-card { text-align: right; }
+    [dir="rtl"] #live-score-wrap { font-family: 'Courier New', monospace; }
+    [dir="rtl"] #live-score-label { letter-spacing: 0; }
     [dir="rtl"] .lf { text-align: right; }
     [dir="rtl"] #lb-table th { text-align: right; }
     [dir="rtl"] #lb-table td { text-align: right; }
@@ -598,6 +616,7 @@
         <option value="pt-BR">🇧🇷 Português (Brasil)</option>
         <option value="ko">🇰🇷 한국어</option>
         <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+        <option value="te">🇮🇳 తెలుగు</option>
         <option value="zh-Hans">🇨🇳 中文（简体）</option>
         <option value="zh-Hant">🇹🇼 中文（繁體）</option>
         <option value="ms">🇸🇬 Bahasa Melayu</option>
@@ -725,71 +744,70 @@
   </div>
 
   <div class="start-card">
-    <h3 data-t="start.topics_h">Quality Topics Covered</h3>
+    <h3 data-t="start.topics_h">చర్చించిన నాణ్యత అంశాలు</h3>
     <span class="tag">GMP</span>
     <span class="tag">AQL / ISO 2859-1</span>
     <span class="tag">CAPA</span>
     <span class="tag">ISO 13485</span>
-    <span class="tag" data-t="topic.calibration">Calibration</span>
-    <span class="tag" data-t="topic.batch_records">Batch Records</span>
+    <span class="tag" data-t="topic.calibration">క్రమాంకనం</span>
+    <span class="tag" data-t="topic.batch_records">బ్యాచ్ రికార్డులు</span>
     <span class="tag">NCR</span>
-    <span class="tag" data-t="topic.visual_inspection">Visual Inspection</span>
-    <span class="tag" data-t="topic.defect_class">Defect Classification</span>
-    <span class="tag" data-t="topic.sop_compliance">SOP Compliance</span>
+    <span class="tag" data-t="topic.visual_inspection">దృశ్య తనిఖీ</span>
+    <span class="tag" data-t="topic.defect_class">లోప వర్గీకరణ</span>
+    <span class="tag" data-t="topic.sop_compliance">SOP అనుసరణ</span>
     <span class="tag">ISO 9001:2015</span>
     <span class="tag">ISO 15378:2017</span>
-    <span class="tag" data-t="topic.risk_thinking">Risk-Based Thinking</span>
+    <span class="tag" data-t="topic.risk_thinking">జోఖిమ-ఆధారిత ఆలోచన</span>
   </div>
 
   <div class="start-card" style="font-size:0.82rem;">
-    <h3 data-t="start.how_h">How to Play</h3>
+    <h3 data-t="start.how_h">ఆట విధానం</h3>
     <div data-t-html="start.how_content">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;line-height:1.9;">
-        <div>🔍 <strong style="color:var(--text);">Examine hotspots</strong> in each area to find clues and collect items</div>
-        <div>🎒 <strong style="color:var(--text);">Select an item</strong> from your inventory, then click a hotspot to use it</div>
-        <div>🧩 <strong style="color:var(--text);">Solve puzzles</strong> — every answer is grounded in real quality principles</div>
-        <div>📋 <strong style="color:var(--text);">Check Field Notes</strong> — clues and facts are recorded automatically</div>
-        <div>💬 <strong style="color:var(--text);">Use Group Chat</strong> — coordinate with your team in real time</div>
-        <div>🔑 <strong style="color:var(--text);">Complete tasks individually</strong> — every player must personally solve each puzzle for the group to advance</div>
+        <div>🔍 <strong style="color:var(--text);">హాట్‌స్పాట్లను పరీక్షించండి</strong> — ప్రతి ప్రాంతంలో సూచనలు కనుగొని వస్తువులు సేకరించండి</div>
+        <div>🎒 <strong style="color:var(--text);">వస్తువు ఎంచుకోండి</strong> — మీ జాబితా నుండి వస్తువు ఎంచుకుని హాట్‌స్పాట్‌పై క్లిక్ చేయండి</div>
+        <div>🧩 <strong style="color:var(--text);">పజిల్‌లు పరిష్కరించండి</strong> — ప్రతి సమాధానం నిజమైన నాణ్యత సూత్రాలపై ఆధారపడింది</div>
+        <div>📋 <strong style="color:var(--text);">ఫీల్డ్ నోట్స్ తనిఖీ చేయండి</strong> — సూచనలు మరియు వాస్తవాలు స్వయంచాలకంగా నమోదవుతాయి</div>
+        <div>💬 <strong style="color:var(--text);">గ్రూప్ చాట్ వాడండి</strong> — మీ జట్టుతో నిజ సమయంలో సమన్వయం చేసుకోండి</div>
+        <div>🔑 <strong style="color:var(--text);">పనులు వ్యక్తిగతంగా పూర్తి చేయండి</strong> — ప్రతి ఆటగాడు వ్యక్తిగతంగా ప్రతి పజిల్ పరిష్కరించాలి, లేదా బృందం ముందుకు వెళ్ళదు</div>
       </div>
       <div style="margin-top:10px;padding:8px 12px;background:rgba(0,153,230,0.07);border-left:3px solid var(--accent);border-radius:2px;font-size:0.77rem;color:var(--dim);line-height:1.7;">
-        There are <strong style="color:var(--text);">5 areas</strong> and <strong style="color:var(--text);">11 puzzles</strong> to complete in <strong style="color:var(--text);">30 minutes</strong>.
-        Areas unlock as you progress — you cannot skip ahead.
+        <strong style="color:var(--text);">5 ప్రాంతాలు</strong> మరియు <strong style="color:var(--text);">11 పజిల్‌లు</strong> <strong style="color:var(--text);">30 నిమిషాల్లో</strong> పూర్తి చేయాలి. ముందుకు వెళ్ళేకొద్దీ ప్రాంతాలు తెరవబడతాయి — ముందుకు దాటడం సాధ్యం కాదు.
       </div>
     </div>
   </div>
 
   <div class="start-card" style="font-size:0.81rem;">
-    <h3 data-t="start.rules_h">Rules</h3>
+    <h3 data-t="start.rules_h">నియమాలు</h3>
     <div data-t-html="start.rules_content">
       <table style="width:100%;border-collapse:collapse;">
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px 7px 0;width:28px;font-size:1rem;">👥</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Team size:</strong> 3 – 5 members. All must be connected before the game starts.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">బృంద పరిమాణం:</strong> 3 – 5 సభ్యులు. ఆట ప్రారంభమయ్యే ముందు అందరూ కనెక్ట్ అయి ఉండాలి.</td>
         </tr>
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px 7px 0;font-size:1rem;">⏱️</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Simultaneous start:</strong> Every player must click <em>"I'm Ready"</em>. The timer starts for all at the same moment.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ఒకే సమయంలో ప్రారంభం:</strong> ప్రతి ఆటగాడు <em>"నేను సిద్ధం"</em> క్లిక్ చేయాలి. అందరికీ ఒకే సమయంలో టైమర్ ప్రారంభమవుతుంది.</td>
         </tr>
         <tr style="border-bottom:1px solid var(--border);">
-          <td style="padding:7px 8px 7px 0;font-size:1rem;">🔑</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Individual tasks:</strong> Every player must personally solve each puzzle — the group advances only when all members complete it.</td>
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">👤</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">వ్యక్తిగత అవసరం:</strong> ప్రతి ఆటగాడు స్వతంత్రంగా ప్రతి పని పూర్తి చేయాలి. మీరు వ్యక్తిగతంగా పూర్తి చేయకుండా గది దాటలేరు.</td>
         </tr>
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px 7px 0;font-size:1rem;">🚪</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Area locks:</strong> Each area is locked until the previous task is completed — complete tasks in order.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ప్రాంత తాళాలు:</strong> ముందు పని పూర్తయ్యేంత వరకు ప్రతి ప్రాంతం తాళంలో ఉంటుంది — క్రమంలో పనులు పూర్తి చేయండి.</td>
         </tr>
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px 7px 0;font-size:1rem;">❌</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Wrong answers:</strong> Each incorrect answer deducts <strong style="color:var(--danger);">50 points</strong> from your final score — think before you submit.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">తప్పు సమాధానాలు:</strong> తప్పు సమాధానం తుది స్కోర్ నుండి <strong style="color:var(--danger);">50 పాయింట్లు</strong> తగ్గిస్తుంది — సమర్పించే ముందు ఆలోచించండి.</td>
         </tr>
         <tr style="border-bottom:1px solid var(--border);">
           <td style="padding:7px 8px 7px 0;font-size:1rem;">💡</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Hints:</strong> Each area has one hint available. Using a hint costs <strong style="color:var(--danger);">−60 seconds</strong> and <strong style="color:var(--danger);">−50 points</strong>. Hints are subtle — they do not give you the answer.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">సూచనలు:</strong> ప్రతి ప్రాంతంలో ఒక సూచన అందుబాటులో ఉంటుంది. సూచన వాడితే <strong style="color:var(--danger);">−60 సెకన్లు</strong> మరియు <strong style="color:var(--danger);">−50 పాయింట్లు</strong> తగ్గుతాయి. సూచనలు సూక్ష్మమైనవి — సమాధానం నేరుగా ఇవ్వవు.</td>
         </tr>
         <tr>
           <td style="padding:7px 8px 7px 0;font-size:1rem;">🏁</td>
-          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">One attempt:</strong> Each group plays once. Results are final and posted to the leaderboard.</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ఒకే అవకాశం:</strong> ప్రతి బృందం ఒకసారే ఆడగలదు. ఫలితాలు తుది మరియు లీడర్‌బోర్డ్‌లో నమోదవుతాయి.</td>
         </tr>
       </table>
     </div>
@@ -797,48 +815,48 @@
   </div>
 
   <div class="start-card" style="font-size:0.81rem;">
-    <h3 data-t="start.scoring_h">Scoring</h3>
+    <h3 data-t="start.scoring_h">స్కోరింగ్</h3>
     <div data-t-html="start.scoring_content">
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">What</th>
-            <th style="text-align:right;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">Points</th>
+            <th style="text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">ఏమిటి</th>
+            <th style="text-align:right;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">పాయింట్లు</th>
           </tr>
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid #14162a;">
-            <td style="padding:8px 0;color:var(--dim);">✅ Each puzzle solved</td>
-            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+200 pts</td>
+            <td style="padding:8px 0;color:var(--dim);">✅ ప్రతి పజిల్ పరిష్కరించినందుకు</td>
+            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+200 పాయింట్లు</td>
           </tr>
           <tr style="border-bottom:1px solid #14162a;">
-            <td style="padding:8px 0;color:var(--dim);">⏱️ Every second remaining on the clock <em>(win only)</em></td>
-            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+2 pts / sec</td>
+            <td style="padding:8px 0;color:var(--dim);">⏱️ గడియారంలో మిగిలిన ప్రతి సెకన్ <em>(గెలుపులో మాత్రమే)</em></td>
+            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+2 పాయింట్లు / సె</td>
           </tr>
           <tr style="border-bottom:1px solid #14162a;">
-            <td style="padding:8px 0;color:var(--dim);">❌ Each wrong answer</td>
-            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 pts</td>
+            <td style="padding:8px 0;color:var(--dim);">❌ ప్రతి తప్పు సమాధానం</td>
+            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 పాయింట్లు</td>
           </tr>
           <tr>
-            <td style="padding:8px 0;color:var(--dim);">💡 Using a hint</td>
-            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 pts &amp; −60s</td>
+            <td style="padding:8px 0;color:var(--dim);">💡 సూచన వాడినందుకు</td>
+            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 పాయింట్లు &amp; −60సె</td>
           </tr>
         </tbody>
       </table>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
-          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">Max puzzle pts</div>
+          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">గరిష్ట పజిల్ పాయింట్లు</div>
           <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">2,200</div>
           <div style="font-size:0.68rem;color:var(--dim);">11 × 200</div>
         </div>
         <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
-          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">Max time bonus</div>
-          <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">3,000</div>
-          <div style="font-size:0.68rem;color:var(--dim);">1,500 sec × 2</div>
+          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">గరిష్ట సమయ బోనస్</div>
+          <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">3,600</div>
+          <div style="font-size:0.68rem;color:var(--dim);">1,800 సె × 2</div>
         </div>
       </div>
       <div style="margin-top:8px;padding:8px 12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:4px;text-align:center;font-size:0.78rem;color:#ffd700;">
-        🏆 Maximum possible score: <strong>5,800 pts</strong> — all puzzles solved, no wrong answers, no hints, instant finish
+        🏆 గరిష్ట సాధ్యమైన స్కోర్: <strong>5,800 పాయింట్లు</strong> — అన్ని పజిల్‌లు పరిష్కరించి, తప్పు సమాధానాలు లేకుండా, సూచనలు వాడకుండా, వెంటనే పూర్తి చేయడం
       </div>
     </div>
     <div data-t-html="start.scoring_hq"></div>
@@ -869,6 +887,10 @@
   <div class="header-left">
     <h1 data-t="header.title">🏭 MediSeal — Quality Week</h1>
     <span data-t="header.motto">PROGRESS IN EVERY STEP · QUALITY IN EVERY DETAIL</span>
+  </div>
+  <div id="live-score-wrap">
+    <span id="live-score-label" data-t="score.live_label">Score</span>
+    <span id="live-score">0</span>
   </div>
   <div id="timer">30:00</div>
 </header>
@@ -1035,6 +1057,9 @@ document.addEventListener('DOMContentLoaded', () => {
       S.lang = sel.value;
       localStorage.setItem('qw_lang', S.lang);
       applyTranslations();
+      // re-render group dropdown placeholder in current language
+      const gs = document.getElementById('group-select');
+      if (gs && gs.options.length > 0) gs.options[0].text = t('login.select_group_placeholder');
       // re-render nav/room if game already started
       if (document.getElementById('game-layout') &&
           document.getElementById('game-layout').style.display !== 'none') {
@@ -1079,10 +1104,36 @@ function calcScore(won) {
     (S.puzzlesDone * ptPer) +
     timeBonus +
     (S.hiddenBonus || 0) -
-    (S.wrongAnswers * 50) -
+    (S.wrongAnswers * WRONG_PTS_CLIENT) -
     (S.hintPenalty || 0) -
     otPenalty
   );
+}
+
+function updateLiveScore() {
+  const el = document.getElementById('live-score');
+  if (!el) return;
+  const prev = parseInt(el.dataset.prev || '0', 10);
+  // Base score (excludes time bonus — that's determined at game-end)
+  const isOvertime  = S.timerSec < OT_THRESH_CLIENT;
+  const ptPer       = S.resumed ? 100 : (isOvertime ? 180 : 200);
+  const otSecs      = isOvertime ? (OT_THRESH_CLIENT - S.timerSec) : 0;
+  const otPenalty   = Math.ceil(otSecs / 60) * 30;
+  const score = Math.max(0,
+    (S.puzzlesDone * ptPer) +
+    (S.hiddenBonus || 0) -
+    (S.wrongAnswers * WRONG_PTS_CLIENT) -
+    (S.hintPenalty || 0) -
+    otPenalty
+  );
+  el.textContent    = score.toLocaleString();
+  el.dataset.prev   = score;
+  // Flash color to indicate change direction
+  el.classList.remove('gain', 'loss', 'flash');
+  void el.offsetWidth; // reflow to restart animation
+  if (score > prev)      el.classList.add('gain', 'flash');
+  else if (score < prev) el.classList.add('loss', 'flash');
+  setTimeout(() => el.classList.remove('gain', 'loss', 'flash'), 600);
 }
 
 async function submitScore(won) {
@@ -1464,9 +1515,9 @@ const ROOM_PUZZLES = {
 };
 
 function getMissingInRoom(roomId) {
-  // A puzzle counts as done if I personally completed it OR the whole group completed it.
-  // Group-complete implies all roster members (including me) did it, so S.solved is a valid fallback.
-  return (ROOM_PUZZLES[roomId] || []).filter(k => !S.mySolved[k] && !S.solved[k]);
+  // Group-level: only S.solved (all locked players done) gates room departure.
+  // S.mySolved is used only for per-player hotspot state, not for navigation.
+  return (ROOM_PUZZLES[roomId] || []).filter(k => !S.solved[k]);
 }
 
 function goTo(roomId) {
@@ -1477,7 +1528,14 @@ function goTo(roomId) {
   if (targetIdx > currentIdx) {
     const missing = getMissingInRoom(S.room);
     if (missing.length > 0) {
-      showAlarm(missing, 'depart');
+      // Differentiate: show alarm only for puzzles I haven't personally done yet.
+      // If I've done them all but teammates haven't, show a waiting message instead.
+      const myMissing = missing.filter(k => !S.mySolved[k]);
+      if (myMissing.length > 0) {
+        showAlarm(myMissing, 'depart');
+      } else {
+        log(t('msg.waiting_for_team'), 'warn');
+      }
       return;
     }
   }
@@ -2244,6 +2302,8 @@ function openHiddenModal(hqId) {
         renderRoom();  // re-attach hq triggers with updated answered state
         return;
       }
+      // Guard: another player may have answered before this event was processed
+      if (S.hiddenAnswers[hqId]) return;
       S.socket.emit('hidden_q_submit', { hqId, option: ch.opt });
       setFeedback(t('hq.submitting'), 'ok');
       // Disable choices to prevent re-submit
@@ -2415,9 +2475,11 @@ function attachHQSpot(triggerType, emoji, done, fire) {
       if (!art) break;
       const div = document.createElement('div');
       div.className = 'hq-spot hq-spot-art-corner' + (done ? ' hq-done' : '');
+      div.textContent = done ? '✓' : emoji;
       div.setAttribute('role', 'button');
       div.setAttribute('tabindex', '0');
-      div.setAttribute('aria-label', done ? '✓' : '');
+      div.setAttribute('aria-label', (done ? '✓ ' : '') + emoji);
+      div.setAttribute('title', done ? t('hq.found_badge') : '?');
       div.onclick = fire;
       div.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } };
       art.appendChild(div);
@@ -2572,6 +2634,7 @@ function openModal({ tag, title, body, questionKey, placeholder, submitLabel, on
     inp.placeholder   = placeholder || '';
     inp.value         = '';
     sub.style.display = 'inline-block';
+    sub.disabled      = false;
     setTimeout(() => inp.focus(), 60);
   }
 
@@ -2604,9 +2667,10 @@ document.getElementById('modal-cancel').onclick = closeModal;
 // TIMER
 // ────────────────────────────────────────────────
 // REG_SECS = 30*60 = 1800, MAX_SECS = 60*60 = 3600, OT_THRESH = 1800
-const REG_SECS_CLIENT = 30 * 60;
-const MAX_SECS_CLIENT = 60 * 60;
+const REG_SECS_CLIENT  = 30 * 60;
+const MAX_SECS_CLIENT  = 60 * 60;
 const OT_THRESH_CLIENT = MAX_SECS_CLIENT - REG_SECS_CLIENT; // 1800
+const WRONG_PTS_CLIENT = 50;  // must match server WRONG_PTS
 
 function startTimer() {
   S.timerInt = setInterval(() => {
@@ -2631,6 +2695,7 @@ function startTimer() {
       el.classList.remove('urgent');
       el.classList.add('overtime');
       if (otSec === 60) log(t('msg.overtime'), 'warn');
+      updateLiveScore();  // overtime penalty changes each minute
     } else {
       // Hard stop at 60 min
       clearInterval(S.timerInt);
@@ -2673,7 +2738,7 @@ function showEndScreen(won, data) {
   const ptPerPuzzle      = isOvertime ? 180 : 200;
   const regSecsLeft      = isOvertime ? 0 : (secondsRemaining - OT_THRESH_CLIENT);
   const timeBonusPts     = (won && !isOvertime) ? regSecsLeft * 2 : 0;
-  const penaltyPts       = wrongAnswers * 50;
+  const penaltyPts       = wrongAnswers * WRONG_PTS_CLIENT;
   const overtimeSecs     = isOvertime ? (OT_THRESH_CLIENT - secondsRemaining) : 0;
   const overtimePenalty  = Math.ceil(overtimeSecs / 60) * 30;
   const timeSpentSec     = data.timeSpentSec || (MAX_SECS_CLIENT - secondsRemaining);
@@ -2688,7 +2753,7 @@ function showEndScreen(won, data) {
   document.getElementById('end-msg').textContent   = won ? t('end.msg_won') : t('end.msg_lost');
 
   let statsHtml =
-    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">' + t('end.score_title') + ' — ' + (S.demoMode ? 'DEMO' : escHtml(S.groupName || '')) + '</strong><br>' +
+    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">' + t('end.score_title') + ' — ' + (S.demoMode ? t('end.demo_note').split(' — ')[0] : escHtml(S.groupName || '')) + '</strong><br>' +
     t('end.puzzles_n').replace('{n}', puzzlesDone).replace('{pts}', ptPerPuzzle) + ': <span>+' + (puzzlesDone * ptPerPuzzle).toLocaleString() + ' ' + pts + '</span><br>';
 
   if (won && !isOvertime) {
@@ -2737,6 +2802,7 @@ function doStartGame(timerSec) {
   renderNotes();
   renderNav();
   updateProgress();
+  updateLiveScore();
   startTimer();
   log(t('msg.game_start_1'), 'warn');
   log(t('msg.game_start_2'), 'hint');
@@ -2877,6 +2943,7 @@ function connectSocket() {
     closeModal();
     puzzleDone();
     updateProgress(); renderNav(); renderRoom();
+    updateLiveScore();
     log(t('log.all_players_done').replace('{label}', t('puzzle.label.' + key) || PUZZLE_LABELS[key] || key), 'success');
     // Per-puzzle post-actions
     if (key === 'coa_verified') {
@@ -2916,6 +2983,7 @@ function connectSocket() {
     S.timerSec = timerSec;
     document.getElementById('pause-overlay').classList.remove('show');
     log(t('pause.resumed'), 'success');
+    updateLiveScore();
     startTimer();
   });
 
@@ -2924,14 +2992,18 @@ function connectSocket() {
     S.hiddenAnswers[hqId] = result;
     // Recompute hiddenBonus total
     S.hiddenBonus = Object.values(S.hiddenAnswers).reduce((sum, r) => sum + (r && r.bonusPts ? r.bonusPts : 0), 0);
+    updateLiveScore();
     renderRoom();  // re-attach hq triggers with updated answered state
-    // If this player's modal for this HQ is currently open, update it
+    // If this player's modal for this HQ is currently open, lock it — answer is now resolved
     if (window._currentHqId === hqId) {
       const fb = document.getElementById('modal-feedback');
       if (fb) {
         fb.textContent = result.isCorrect ? t('hq.answered_correct') : t('hq.answered_wrong');
         fb.className   = result.isCorrect ? 'ok' : 'bad';
       }
+      // Disable all choice buttons so no late submission is possible
+      const choicesEl = document.getElementById('modal-choices');
+      if (choicesEl) choicesEl.querySelectorAll('button').forEach(b => { b.disabled = true; });
     }
     // Log the outcome
     const who = escHtml(result.answeredBy);
@@ -2956,6 +3028,15 @@ function connectSocket() {
     appendChat(msg.from, msg.text, msg.ts, msg.from === S.memberName);
   });
 
+  sock.on('wrong_answer_notify', ({ by, penalty, total }) => {
+    S.wrongAnswers = total;   // sync group counter
+    const msg = t('score.wrong_by')
+      .replace('{name}', escHtml(by))
+      .replace('{penalty}', penalty);
+    log(msg, 'fail');
+    updateLiveScore();
+  });
+
   sock.on('hint_broadcast', ({ room, timeCost, ptsCost, fromName }) => {
     // Sync hint state and penalties to other group members
     if (!S.hintsUsed[room]) {
@@ -2963,6 +3044,7 @@ function connectSocket() {
       S.hintPenalty += (ptsCost || 50);
       S.timerSec = Math.max(0, S.timerSec - (timeCost || 60));
       renderRoom();
+      updateLiveScore();
       log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
     }
   });
