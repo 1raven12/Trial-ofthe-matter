@@ -10043,7 +10043,7 @@ const TRANSLATIONS = {
     'puzzle.label.motto_qaoffice':  'Quality Ownership Motto (QA Office)',
 
     /* Group dropdown and server error */
-    'login.select_group_placeholder': '— Select your group —',
+    'login.select_group_placeholder': '— మీ బృందాన్ని ఎంచుకోండి —',
     'login.server_unavailable': 'Server unavailable — use Demo Mode',
     'login.server_error': 'Could not reach the server. Use Demo Mode to test the game without scoring.',
 
@@ -10162,8 +10162,8 @@ const TRANSLATIONS = {
     'members.online':     '{n} online',
     'lobby.connected':    '{count}/5 connected',
   
-    'login.group_size':         'How many people are in your group?',
-    'login.group_size_ph':      '— Select group size —',
+    'login.group_size':         'మీ బృందంలో ఎంత మంది ఉన్నారు?',
+    'login.group_size_ph':      '— బృంద పరిమాణం ఎంచుకోండి —',
     'login.group_size_3':       '3 players',
     'login.group_size_4':       '4 players',
     'login.group_size_5':       '5 players',
