@@ -9714,12 +9714,12 @@ const TRANSLATIONS = {
     'nav.lock.dispatch':   'ముందు QA కార్యాలయంలో CAPA నివేదిక పూర్తి చేసి అధికారపర్చండి.',
 
     /* Alarm overlay */
-    'alarm.title':      '⚠ STOP — GO BACK!',
-    'alarm.sub.pin':    'PIN is correct — but you have unfinished checks!',
-    'alarm.sub.depart': 'You have not finished this room! Complete all puzzles before moving on.',
-    'alarm.go_to':      'Go to:',
-    'alarm.press':      '→ Press button:',
-    'alarm.ok':         '✓ UNDERSTOOD — I WILL GO BACK NOW',
+    'alarm.title':      '⚠ ఆగండి — వెనక్కి వెళ్ళండి!',
+    'alarm.sub.pin':    'PIN సరైనది — కానీ మీకు అసంపూర్ణ తనిఖీలు ఉన్నాయి!',
+    'alarm.sub.depart': 'మీరు ఈ గది పూర్తి చేయలేదు! ముందుకు వెళ్ళే ముందు అన్ని పజిల్‌లు పరిష్కరించండి.',
+    'alarm.go_to':      'వెళ్ళండి:',
+    'alarm.press':      '→ బటన్ నొక్కండి:',
+    'alarm.ok':         '✓ అర్థమైంది — నేను ఇప్పుడు వెనక్కి వెళ్తాను',
 
     /* Progress bar */
     'progress': 'నాణ్యత తనిఖీలు: {done} / {total} పూర్తయ్యాయి',
@@ -9938,8 +9938,8 @@ const TRANSLATIONS = {
     'end.hq_breakdown_h':     'Hidden Question Results',
 
     /* Modal chrome */
-    'modal.close':  'Close',
-    'modal.submit': 'Submit',
+    'modal.close':  'మూసివేయి',
+    'modal.submit': 'సమర్పించు',
 
     /* Topics, content, lobby, header, side, end, team-confirm */
     'topic.calibration': 'క్రమాంకనం',
@@ -9986,7 +9986,7 @@ const TRANSLATIONS = {
 
 
     /* Modal defaults */
-    'modal.default_tag': 'QUALITY CONTROL',
+    'modal.default_tag': 'నాణ్యత నియంత్రణ',
     'nav.blocked':       'అడ్డుపడ్డారు.',
 
     /* Puzzle correct/wrong feedback messages */
@@ -10015,8 +10015,8 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':    'Incorrect. The problem was not frequency of audits or log filing. What process should have prevented an unapproved material from being used in the first place?',
 
     /* Team confirmation messages */
-    'modal.waiting_team':  '✓ Correct! Waiting for team ({done}/{required} confirmed)…',
-    'modal.confirming_team': '✓ Waiting for team ({done}/{required} confirmed)…',
+    'modal.waiting_team':  '✓ సరైంది! జట్టు వేచి ఉంది ({done}/{required} ధృవీకరించారు)…',
+    'modal.confirming_team': '✓ జట్టు వేచి ఉంది ({done}/{required} ధృవీకరించారు)…',
     'tc.progress':         '✓ {count} / {required} members confirmed',
     'chat.reconnecting':   'Reconnecting…',
     'chat.placeholder':    'Message your team…',
