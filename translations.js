@@ -10024,7 +10024,7 @@ const TRANSLATIONS = {
     /* Logs for collaborative actions */
     'log.code_found':      '🔑 మీరు "{label}" కు కోడ్ కనుగొన్నారు — {n} మరో జట్టు సభ్యుల కోసం వేచి ఉన్నారు.',
     'log.code_found_other':'🔑 {name} "{label}" సమాధానం కనుగొన్నారు — కోడ్ నమోదు చేసి ధృవీకరించండి!',
-    'log.hint_used_other': '💡 {name} {room} కు సూచన వాడారు. −{time}s / −{pts} పాయింట్లు మీ జట్టుకు వర్తింపజేశారు.',
+    'log.hint_used_other': '💡 {name} {room} కు సూచన వాడారు. −{time}సె / −{pts} పాయింట్లు మీ జట్టుకు వర్తింపజేశారు.',
     'log.teammate_done':   '✓ {name} పూర్తి చేసారు: {label}',
     'log.item_found_other': '🤝 {name} కనుగొన్నారు: {item}',
 
