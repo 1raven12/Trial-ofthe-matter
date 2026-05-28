@@ -10054,19 +10054,19 @@ const TRANSLATIONS = {
     'page.title':       'MediSeal Quality Week — Escape Room',
 
     /* Login card statics */
-    'login.card_title': 'QUALITY WEEK',
-    'login.card_sub':   'GROUP LOGIN',
-    'login.card_motto': 'Progress in every step · Quality in every detail',
-    'login.logged_in_as': 'Logged in as: {name}',
+    'login.card_title': 'నాణ్యత వారం',
+    'login.card_sub':   'గ్రూప్ లాగిన్',
+    'login.card_motto': 'ప్రతి అడుగులో పురోగతి · ప్రతి వివరంలో నాణ్యత',
+    'login.logged_in_as': 'లాగిన్ అయ్యారు: {name}',
     'login.select_error': 'Please select your group.',
     'login.pin_error':  'Please enter your PIN.',
     'login.fail':       'Login failed. Check your PIN and try again.',
     'login.required_fields': 'Group number and PIN are required.',
     'login.demo_mode_label': 'Demo Mode (Admin)',
-    'login.demo_start_btn':  'BEGIN AUDIT SIMULATION',
+    'login.demo_start_btn':  'ఆడిట్ అనుకరణ ప్రారంభించండి',
     'login.admin_pw_wrong':  'Incorrect admin password.',
-    'start.btn_waiting_text': "✓ I'm Ready — waiting…",
-    'start.card_motto': 'Progress in every step · Quality in every detail',
+    'start.btn_waiting_text': '✓ నేను సిద్ధం — వేచి ఉన్నాను…',
+    'start.card_motto': 'ప్రతి అడుగులో పురోగతి · ప్రతి వివరంలో నాణ్యత',
 
     /* Leaderboard modal */
     'lb.h2':            '📊 Leaderboard',
