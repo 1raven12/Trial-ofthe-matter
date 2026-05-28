@@ -9932,10 +9932,10 @@ const TRANSLATIONS = {
     'ch.motto_dis.d': 'D)  Evidence-Based Decision Making — using data and facts to guide decisions',
 
     /* End screen */
-    'end.won':    '🏆 BATCH RELEASED!',
-    'end.lost':   '⏱ TIME EXPIRED — BATCH UNRELEASED',
-    'end.new_game': '↺ New Game',
-    'end.hq_breakdown_h':     'Hidden Question Results',
+    'end.won':    '🏆 బ్యాచ్ విడుదలైంది!',
+    'end.lost':   '⏱ సమయం ముగిసింది — బ్యాచ్ విడుదల కాలేదు',
+    'end.new_game': '↺ కొత్త గేమ్',
+    'end.hq_breakdown_h':     'దాచిన ప్రశ్న ఫలితాలు',
 
     /* Modal chrome */
     'modal.close':  'మూసివేయి',
@@ -9966,17 +9966,17 @@ const TRANSLATIONS = {
     'side.chat_ph': 'ముందు కనెక్ట్ అవ్వండి…',
     'end.msg_won': 'అద్భుతమైన పని! మీ బృందం అన్ని నాణ్యత తనిఖీలు పూర్తి చేసింది, మూల కారణం గుర్తించింది, మరియు అనుసరణ రహిత బ్యాచ్‌ను సరిగ్గా నిర్వహించింది — రోగులను మరియు MediSeal GMP లైసెన్స్‌ను కాపాడింది.',
     'end.msg_lost': 'సమయం ముగిసింది. మీ బృందం అన్ని నాణ్యత తనిఖీలు పూర్తి చేయడానికి ముందే FDA ఆడిటర్ వచ్చారు. బ్యాచ్ BN-2024-3200 పరిష్కరించబడలేదు.',
-    'end.score_title': 'Score Breakdown',
-    'end.puzzles_n': 'Puzzles completed ({n} × {pts} pts)',
-    'end.time_bonus_n': 'Time bonus ({secs}s × 2)',
-    'end.time_bonus_ot': 'Time bonus (overtime — no bonus)',
-    'end.overtime_n': 'Overtime penalty ({min} min × −30)',
-    'end.wrong_n': 'Wrong answer penalty ({n} × −50)',
-    'end.hint_pen': 'Hint penalty',
-    'end.total_score': 'TOTAL SCORE:',
-    'end.time_taken': 'Time taken:',
-    'end.demo_note': 'Demo — score not saved',
-    'end.lb_link': '📊 View Leaderboard',
+    'end.score_title': 'స్కోర్ వివరణ',
+    'end.puzzles_n': 'పూర్తి చేసిన పజిల్‌లు ({n} × {pts} పాయింట్లు)',
+    'end.time_bonus_n': 'సమయ బోనస్ ({secs}s × 2)',
+    'end.time_bonus_ot': 'సమయ బోనస్ (అదనపు సమయం — బోనస్ లేదు)',
+    'end.overtime_n': 'అదనపు సమయం శిక్ష ({min} నిమి × −30)',
+    'end.wrong_n': 'తప్పు సమాధానం శిక్ష ({n} × −50)',
+    'end.hint_pen': 'సూచన శిక్ష',
+    'end.total_score': 'మొత్తం స్కోర్:',
+    'end.time_taken': 'తీసుకున్న సమయం:',
+    'end.demo_note': 'డెమో — స్కోర్ సేవ్ కాలేదు',
+    'end.lb_link': '📊 లీడర్‌బోర్డ్ చూడండి',
     'tc.header': '🔑 జట్టు ధృవీకరణ అవసరం',
     'tc.body_html': '<strong>{name}</strong> సమాధానం కనుగొన్నారు. అందరు {required} సభ్యులు ముందుకు సాగడానికి ఈ కోడ్ నమోదు చేయాలి:',
     'tc.instruction': 'మీకు వచ్చిందని ధృవీకరించడానికి పైన ఉన్న కోడ్ టైప్ చేయండి:',
@@ -10092,7 +10092,7 @@ const TRANSLATIONS = {
     'already.lb_btn':   '📊 View Leaderboard',
 
     /* End screen extras */
-    'end.lb_btn':       '📊 View Leaderboard',
+    'end.lb_btn':       '📊 లీడర్‌బోర్డ్ చూడండి',
 
     /* Hint penalty log */
     'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{time}s మరియు −{pts} పాయింట్లు.',
@@ -10203,7 +10203,7 @@ const TRANSLATIONS = {
     'hq.answered_wrong_log':                       '{who} బోనస్ ప్రశ్నకు సమాధానం చెప్పారు — పాయింట్లు లేవు.',
     'score.wrong_by':     '{name} తప్పు సమాధానం చెప్పారు. −{penalty} పాయింట్లు.',
     'score.live_label':   'స్కోర్',
-    'end.hidden_bonus':                            'Bonus questions ({found} found, {correct} correct)',
+    'end.hidden_bonus':                            'బోనస్ ప్రశ్నలు ({found} కనుగొన్నారు, {correct} సరైనవి)',
     'hq.hq_receiving_1.title':                        'Food Quality: Everyday Test',
     'hq.hq_receiving_1.body':                         'How can you most reliably check if an egg is spoiled before cooking it?',
     'hq.hq_receiving_1.a':                            'Place it in cold water — a floating egg is likely spoiled.',
