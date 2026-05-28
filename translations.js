@@ -10176,7 +10176,7 @@ const TRANSLATIONS = {
     'lobby.connected_of':       'కనెక్ట్ అయ్యారు',
     'lobby.all_ready':          'ఆటగాళ్ళందరూ కనెక్ట్ అయ్యారు! అందరూ ప్రారంభించడానికి సిద్ధం నొక్కండి.',
     'lobby.wrong_count':        'సరిగ్గా {required} ఆటగాళ్ళు అవసరం. ప్రస్తుతం {online} కనెక్ట్ అయ్యారు.',
-    'lobby.too_many':           'Too many players. Expected {required}, got {online}.',
+    'lobby.too_many':           'ఎక్కువ ఆటగాళ్ళు. {required} ఆశించారు, {online} ఉన్నారు.',
     'pause.title':              'ఆట పాజ్ అయింది',
     'pause.body':               '{name} డిస్‌కనెక్ట్ అయ్యారు. ఈ సెషన్‌కు {total} ఆటగాళ్ళు అవసరం. అందరూ తిరిగి వచ్చే వరకు వేచి ఉన్నారు.',
     'pause.waiting_for':        'వేచి ఉన్నారు: {names}',
