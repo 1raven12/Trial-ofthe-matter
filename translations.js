@@ -9958,12 +9958,12 @@ const TRANSLATIONS = {
     'lobby.all_5': 'All 5 members connected!',
     'header.title': '🏭 MediSeal — నాణ్యత వారం',
     'header.motto': 'ప్రతి అడుగులో పురోగతి · ప్రతి వివరంలో నాణ్యత',
-    'side.inventory': 'Inventory',
-    'side.field_notes': 'Field Notes',
-    'side.group_chat': 'Group Chat',
-    'side.areas': 'Areas',
-    'side.no_entries': 'No entries yet.',
-    'side.chat_ph': 'Connect first…',
+    'side.inventory': 'జాబితా',
+    'side.field_notes': 'ఫీల్డ్ నోట్స్',
+    'side.group_chat': 'గ్రూప్ చాట్',
+    'side.areas': 'ప్రాంతాలు',
+    'side.no_entries': 'ఇంకా నమోదులు లేవు.',
+    'side.chat_ph': 'ముందు కనెక్ట్ అవ్వండి…',
     'end.msg_won': 'అద్భుతమైన పని! మీ బృందం అన్ని నాణ్యత తనిఖీలు పూర్తి చేసింది, మూల కారణం గుర్తించింది, మరియు అనుసరణ రహిత బ్యాచ్‌ను సరిగ్గా నిర్వహించింది — రోగులను మరియు MediSeal GMP లైసెన్స్‌ను కాపాడింది.',
     'end.msg_lost': 'సమయం ముగిసింది. మీ బృందం అన్ని నాణ్యత తనిఖీలు పూర్తి చేయడానికి ముందే FDA ఆడిటర్ వచ్చారు. బ్యాచ్ BN-2024-3200 పరిష్కరించబడలేదు.',
     'end.score_title': 'Score Breakdown',
@@ -10104,7 +10104,7 @@ const TRANSLATIONS = {
     'nav.locked':   ' — locked',
 
     /* Notes fallback */
-    'side.no_entries_html': 'No entries yet.',
+    'side.no_entries_html': 'ఇంకా నమోదులు లేవు.',
 
     /* Room badges */
     'room.badge.receiving':  'AREA 01 — RECEIVING DOCK',
