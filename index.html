@@ -3174,6 +3174,7 @@ function applyServerState(state) {
   if (state.puzzlesDone  !== undefined)  S.puzzlesDone  = Math.max(S.puzzlesDone, state.puzzlesDone);
   if (state.wrongAnswers !== undefined)  S.wrongAnswers = Math.max(S.wrongAnswers, state.wrongAnswers);
   if (state.hintPenalty  !== undefined)  S.hintPenalty  = Math.max(S.hintPenalty, state.hintPenalty);
+  if (Array.isArray(state.hintsUsed)) state.hintsUsed.forEach(r => { S.hintsUsed[r] = true; });
   if (state.timerSec     !== undefined)  S.timerSec     = state.timerSec;
   if (state.resumed      !== undefined)  S.resumed      = !!state.resumed;
   // Restore pause state

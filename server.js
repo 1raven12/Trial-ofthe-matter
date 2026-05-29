@@ -607,6 +607,7 @@ io.on('connection', (socket) => {
       puzzlesDone:   sess.puzzlesDone,
       wrongAnswers:  sess.wrongAnswers,
       hintPenalty:   sess.hintPenalty || 0,
+      hintsUsed:     [...(sess.hintsUsed || [])],
       timerSec:      calcSecsRemaining(groupId),
       resumed:       !!sess.resumed,
       lockedRoster:  sess.lockedRoster || [],
@@ -718,6 +719,9 @@ io.on('connection', (socket) => {
   socket.on('hint_used', ({ room, timeCost }) => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
+    if (!gs.hintsUsed) gs.hintsUsed = new Set();
+    if (gs.hintsUsed.has(room)) return; // already hinted this room — ignore duplicate
+    gs.hintsUsed.add(room);
     gs.hintPenalty = (gs.hintPenalty || 0) + HINT_PTS;
     socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost: HINT_PTS, fromName: memberName });
   });
