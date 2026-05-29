@@ -698,6 +698,11 @@ io.on('connection', (socket) => {
   socket.on('wrong_answer', () => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
+    // Rate-limit: one wrong_answer per socket per 2 seconds to prevent spam
+    if (!gs.wrongAnswerAt) gs.wrongAnswerAt = new Map();
+    const last = gs.wrongAnswerAt.get(socket.id) || 0;
+    if (Date.now() - last < 2000) return;
+    gs.wrongAnswerAt.set(socket.id, Date.now());
     gs.wrongAnswers++;
     // Broadcast to entire group so every player sees who got it wrong and the penalty
     io.to(groupId).emit('wrong_answer_notify', {
