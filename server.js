@@ -24,6 +24,7 @@ const OT_THRESH  = MAX_SECS - REG_SECS;  // 1800 — timerSec below this = overt
 
 // ── Scoring constant ────────────────────────────────────────────────────────
 const WRONG_PTS = 50;  // penalty per wrong answer
+const HINT_PTS  = 50;  // penalty per hint used
 
 // ── Hidden bonus questions ────────────────────────────────────────────────────
 const HQ_BONUS = 20;  // bonus points per correct hidden question
@@ -391,7 +392,9 @@ app.get('/api/summary', (req, res) => {
 // Admin login
 app.post('/api/admin/login', (req, res) => {
   const data = load();
-  if (!req.body || req.body.password !== data.adminPassword) {
+  // Prefer ADMIN_PASSWORD env var; fall back to groups.json field
+  const adminPw = process.env.ADMIN_PASSWORD || data.adminPassword;
+  if (!req.body || req.body.password !== adminPw) {
     return res.status(401).json({ error: 'Incorrect admin password.' });
   }
   const token = crypto.randomBytes(22).toString('hex');
@@ -604,6 +607,7 @@ io.on('connection', (socket) => {
       puzzlesDone:   sess.puzzlesDone,
       wrongAnswers:  sess.wrongAnswers,
       hintPenalty:   sess.hintPenalty || 0,
+      hintsUsed:     Object.keys(sess.hintsUsed || {}),
       timerSec:      calcSecsRemaining(groupId),
       resumed:       !!sess.resumed,
       lockedRoster:  sess.lockedRoster || [],
@@ -697,6 +701,12 @@ io.on('connection', (socket) => {
   socket.on('wrong_answer', () => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
+    // Rate-limit: one wrong_answer per socket per 2 seconds to prevent spam
+    if (!gs.wrongAnswerAt || typeof gs.wrongAnswerAt !== 'object' || Array.isArray(gs.wrongAnswerAt))
+      gs.wrongAnswerAt = {};
+    const last = gs.wrongAnswerAt[socket.id] || 0;
+    if (Date.now() - last < 2000) return;
+    gs.wrongAnswerAt[socket.id] = Date.now();
     gs.wrongAnswers++;
     // Broadcast to entire group so every player sees who got it wrong and the penalty
     io.to(groupId).emit('wrong_answer_notify', {
@@ -707,11 +717,15 @@ io.on('connection', (socket) => {
   });
 
   // ── Hint used ─────────────────────────────────────────────────────────────
-  socket.on('hint_used', ({ room, timeCost, ptsCost }) => {
+  socket.on('hint_used', ({ room, timeCost }) => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
-    gs.hintPenalty = (gs.hintPenalty || 0) + (ptsCost || 50);
-    socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost, fromName: memberName });
+    if (!gs.hintsUsed || typeof gs.hintsUsed !== 'object' || Array.isArray(gs.hintsUsed))
+      gs.hintsUsed = {};
+    if (gs.hintsUsed[room]) return; // already hinted this room — ignore duplicate
+    gs.hintsUsed[room] = true;
+    gs.hintPenalty = (gs.hintPenalty || 0) + HINT_PTS;
+    socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost: HINT_PTS, fromName: memberName });
   });
 
   // ── Hidden bonus question submission ─────────────────────────────────────
@@ -854,6 +868,35 @@ io.on('connection', (socket) => {
       resumed:      !!gs.resumed,
       hiddenBonus,
     });
+
+    // Persist result to database
+    try {
+      const data  = load();
+      const group = data.groups.find(g => g.id === groupId);
+      if (group) {
+        const timeSpentSec = Math.round((Date.now() - (gs.startedAt || Date.now())) / 1000);
+        const completedAt  = new Date().toISOString();
+        group.status           = 'completed';
+        group.score            = score;
+        group.puzzlesDone      = gs.puzzlesDone;
+        group.wrongAnswers     = gs.wrongAnswers;
+        group.hintPenalty      = gs.hintPenalty || 0;
+        group.won              = false;
+        group.secondsRemaining = 0;
+        group.timeSpentSec     = timeSpentSec;
+        group.completedAt      = completedAt;
+        if (!group.trialGroup) group.permanentlyLocked = true;
+        if (!Array.isArray(group.trials)) group.trials = [];
+        group.trials.push({
+          trialNumber: group.trials.length + 1,
+          score, puzzlesDone: gs.puzzlesDone, wrongAnswers: gs.wrongAnswers,
+          hintPenalty: gs.hintPenalty || 0, hiddenFound, hiddenCorrect, hiddenBonus,
+          won: false, secondsRemaining: 0, timeSpentSec, completedAt, resumed: !!gs.resumed,
+        });
+        save(data);
+      }
+    } catch (e) { console.error('overtime_hardstop save failed:', e); }
+
     io.to(groupId).emit('game_over', {
       won: false, score, puzzlesDone: gs.puzzlesDone,
       wrongAnswers: gs.wrongAnswers, secondsRemaining: 0,
@@ -871,14 +914,17 @@ io.on('connection', (socket) => {
       else {
         const online = getOnlineMembers(groupId).length;
         io.to(groupId).emit('ready_update', {
-          readyCount: rs.size, total: Math.max(online, rs.size),
+          readyCount: rs.size, total: online,
           readyNames: [...rs.values()],
         });
       }
     }
 
-    // If game in progress and player is on locked roster → PAUSE
+    // Clean up rate-limit cache entry for this socket
     const gs = groupSessions.get(groupId);
+    if (gs && gs.wrongAnswerAt) delete gs.wrongAnswerAt[socket.id];
+
+    // If game in progress and player is on locked roster → PAUSE
     if (gs && !gs.paused && Array.isArray(gs.lockedRoster) && gs.lockedRoster.includes(memberName)) {
       gs.paused   = true;
       gs.pausedAt = Date.now();
