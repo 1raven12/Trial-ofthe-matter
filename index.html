@@ -1043,6 +1043,7 @@ const S = {
   groupSize:     0,    // group size selected at login
   lockedRoster:  [],   // locked player names
   paused:        false,// game paused due to disconnect
+  resumed:       false,// game was resumed (reduces pts/puzzle to 100)
   membersOnline: [],   // current online members
   hiddenAnswers: {},   // hqId → result object from server (group-level, one per HQ)
   hiddenBonus:   0,    // accumulated bonus points from correct hidden questions
@@ -1192,7 +1193,8 @@ document.getElementById('login-btn').onclick = async () => {
   if (!groupId)            { err.textContent = t('login.select_error');     return; }
   if (!pin)                { err.textContent = t('login.pin_error');        return; }
   if (![3,4,5].includes(groupSize)) { err.textContent = t('login.group_size_error'); return; }
-  const name = document.getElementById('member-name').value.trim() || 'Member';
+  const name = document.getElementById('member-name').value.trim();
+  if (!name) { err.textContent = t('login.name_error'); return; }
   try {
     const res = await apiCall('/api/login', 'POST', { groupId, pin, groupSize });
     if (res.status === 'completed') {
@@ -3172,6 +3174,7 @@ function applyServerState(state) {
   if (state.wrongAnswers !== undefined)  S.wrongAnswers = Math.max(S.wrongAnswers, state.wrongAnswers);
   if (state.hintPenalty  !== undefined)  S.hintPenalty  = Math.max(S.hintPenalty, state.hintPenalty);
   if (state.timerSec     !== undefined)  S.timerSec     = state.timerSec;
+  if (state.resumed      !== undefined)  S.resumed      = !!state.resumed;
   // Restore pause state
   if (state.paused) {
     S.paused = true;
