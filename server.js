@@ -901,7 +901,7 @@ io.on('connection', (socket) => {
       else {
         const online = getOnlineMembers(groupId).length;
         io.to(groupId).emit('ready_update', {
-          readyCount: rs.size, total: Math.max(online, rs.size),
+          readyCount: rs.size, total: online,
           readyNames: [...rs.values()],
         });
       }
