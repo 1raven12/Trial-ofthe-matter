@@ -920,8 +920,11 @@ io.on('connection', (socket) => {
       }
     }
 
-    // If game in progress and player is on locked roster → PAUSE
+    // Clean up rate-limit cache entry for this socket
     const gs = groupSessions.get(groupId);
+    if (gs && gs.wrongAnswerAt) delete gs.wrongAnswerAt[socket.id];
+
+    // If game in progress and player is on locked roster → PAUSE
     if (gs && !gs.paused && Array.isArray(gs.lockedRoster) && gs.lockedRoster.includes(memberName)) {
       gs.paused   = true;
       gs.pausedAt = Date.now();
