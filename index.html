@@ -2987,7 +2987,8 @@ function connectSocket() {
     clearInterval(S.timerInt);
     const body = t('pause.body').replace('{name}', escHtml(who)).replace('{total}', lockedRoster.length);
     document.getElementById('pause-body').textContent = body;
-    const onlineNow = S.membersOnline || [];
+    // member_leave arrives 500ms after game_paused, so exclude 'who' from online list now
+    const onlineNow = (S.membersOnline || []).filter(n => n !== who);
     const missing = lockedRoster.filter(n => !onlineNow.includes(n));
     document.getElementById('pause-waiting').textContent =
       t('pause.waiting_for').replace('{names}', missing.join(', ') || who);
