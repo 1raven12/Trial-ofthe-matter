@@ -24,6 +24,7 @@ const OT_THRESH  = MAX_SECS - REG_SECS;  // 1800 — timerSec below this = overt
 
 // ── Scoring constant ────────────────────────────────────────────────────────
 const WRONG_PTS = 50;  // penalty per wrong answer
+const HINT_PTS  = 50;  // penalty per hint used
 
 // ── Hidden bonus questions ────────────────────────────────────────────────────
 const HQ_BONUS = 20;  // bonus points per correct hidden question
@@ -707,11 +708,11 @@ io.on('connection', (socket) => {
   });
 
   // ── Hint used ─────────────────────────────────────────────────────────────
-  socket.on('hint_used', ({ room, timeCost, ptsCost }) => {
+  socket.on('hint_used', ({ room, timeCost }) => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
-    gs.hintPenalty = (gs.hintPenalty || 0) + (ptsCost || 50);
-    socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost, fromName: memberName });
+    gs.hintPenalty = (gs.hintPenalty || 0) + HINT_PTS;
+    socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost: HINT_PTS, fromName: memberName });
   });
 
   // ── Hidden bonus question submission ─────────────────────────────────────
@@ -854,6 +855,35 @@ io.on('connection', (socket) => {
       resumed:      !!gs.resumed,
       hiddenBonus,
     });
+
+    // Persist result to database
+    try {
+      const data  = load();
+      const group = data.groups.find(g => g.id === groupId);
+      if (group) {
+        const timeSpentSec = Math.round((Date.now() - (gs.startedAt || Date.now())) / 1000);
+        const completedAt  = new Date().toISOString();
+        group.status           = 'completed';
+        group.score            = score;
+        group.puzzlesDone      = gs.puzzlesDone;
+        group.wrongAnswers     = gs.wrongAnswers;
+        group.hintPenalty      = gs.hintPenalty || 0;
+        group.won              = false;
+        group.secondsRemaining = 0;
+        group.timeSpentSec     = timeSpentSec;
+        group.completedAt      = completedAt;
+        if (!group.trialGroup) group.permanentlyLocked = true;
+        if (!Array.isArray(group.trials)) group.trials = [];
+        group.trials.push({
+          trialNumber: group.trials.length + 1,
+          score, puzzlesDone: gs.puzzlesDone, wrongAnswers: gs.wrongAnswers,
+          hintPenalty: gs.hintPenalty || 0, hiddenFound, hiddenCorrect, hiddenBonus,
+          won: false, secondsRemaining: 0, timeSpentSec, completedAt, resumed: !!gs.resumed,
+        });
+        save(data);
+      }
+    } catch (e) { console.error('overtime_hardstop save failed:', e); }
+
     io.to(groupId).emit('game_over', {
       won: false, score, puzzlesDone: gs.puzzlesDone,
       wrongAnswers: gs.wrongAnswers, secondsRemaining: 0,
