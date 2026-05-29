@@ -392,7 +392,9 @@ app.get('/api/summary', (req, res) => {
 // Admin login
 app.post('/api/admin/login', (req, res) => {
   const data = load();
-  if (!req.body || req.body.password !== data.adminPassword) {
+  // Prefer ADMIN_PASSWORD env var; fall back to groups.json field
+  const adminPw = process.env.ADMIN_PASSWORD || data.adminPassword;
+  if (!req.body || req.body.password !== adminPw) {
     return res.status(401).json({ error: 'Incorrect admin password.' });
   }
   const token = crypto.randomBytes(22).toString('hex');
