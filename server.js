@@ -607,7 +607,7 @@ io.on('connection', (socket) => {
       puzzlesDone:   sess.puzzlesDone,
       wrongAnswers:  sess.wrongAnswers,
       hintPenalty:   sess.hintPenalty || 0,
-      hintsUsed:     [...(sess.hintsUsed || [])],
+      hintsUsed:     Object.keys(sess.hintsUsed || {}),
       timerSec:      calcSecsRemaining(groupId),
       resumed:       !!sess.resumed,
       lockedRoster:  sess.lockedRoster || [],
@@ -702,10 +702,11 @@ io.on('connection', (socket) => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
     // Rate-limit: one wrong_answer per socket per 2 seconds to prevent spam
-    if (!gs.wrongAnswerAt) gs.wrongAnswerAt = new Map();
-    const last = gs.wrongAnswerAt.get(socket.id) || 0;
+    if (!gs.wrongAnswerAt || typeof gs.wrongAnswerAt !== 'object' || Array.isArray(gs.wrongAnswerAt))
+      gs.wrongAnswerAt = {};
+    const last = gs.wrongAnswerAt[socket.id] || 0;
     if (Date.now() - last < 2000) return;
-    gs.wrongAnswerAt.set(socket.id, Date.now());
+    gs.wrongAnswerAt[socket.id] = Date.now();
     gs.wrongAnswers++;
     // Broadcast to entire group so every player sees who got it wrong and the penalty
     io.to(groupId).emit('wrong_answer_notify', {
@@ -719,9 +720,10 @@ io.on('connection', (socket) => {
   socket.on('hint_used', ({ room, timeCost }) => {
     const gs = groupSessions.get(groupId);
     if (!gs || gs.paused) return;
-    if (!gs.hintsUsed) gs.hintsUsed = new Set();
-    if (gs.hintsUsed.has(room)) return; // already hinted this room — ignore duplicate
-    gs.hintsUsed.add(room);
+    if (!gs.hintsUsed || typeof gs.hintsUsed !== 'object' || Array.isArray(gs.hintsUsed))
+      gs.hintsUsed = {};
+    if (gs.hintsUsed[room]) return; // already hinted this room — ignore duplicate
+    gs.hintsUsed[room] = true;
     gs.hintPenalty = (gs.hintPenalty || 0) + HINT_PTS;
     socket.to(groupId).emit('hint_broadcast', { room, timeCost, ptsCost: HINT_PTS, fromName: memberName });
   });
