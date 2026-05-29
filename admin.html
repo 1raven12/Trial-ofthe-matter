@@ -78,14 +78,23 @@
     }
     .lb-table td { padding: 10px 10px; border-bottom: 1px solid #14162a; font-size: 0.82rem; vertical-align: middle; }
     .lb-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .lb-table tr.trial-row td { opacity: 0.75; }
 
     .rank-cell { font-size: 1.1rem; width: 44px; text-align: center; }
     .score-cell { font-size: 1.1rem; font-weight: bold; color: var(--accent2); }
     .score-cell.top { color: var(--gold); }
     .name-cell { font-weight: bold; }
+    .trial-badge {
+      display: inline-block; padding: 1px 6px; border-radius: 3px; margin-left: 5px;
+      font-size: 0.65rem; color: var(--dim); border: 1px solid var(--border);
+    }
+    .resumed-badge {
+      display: inline-block; padding: 1px 6px; border-radius: 3px; margin-left: 5px;
+      font-size: 0.65rem; color: var(--warn); border: 1px solid rgba(245,166,35,0.3);
+    }
     .puzzles-cell .pip {
-      display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-      margin-right: 2px;
+      display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+      margin-right: 1px;
     }
     .pip.done    { background: var(--accent2); }
     .pip.missing { background: var(--border); }
@@ -98,6 +107,7 @@
     .badge-completed { background: rgba(0,201,122,0.12); color: var(--accent2); border: 1px solid rgba(0,201,122,0.3); }
     .badge-playing   { background: rgba(245,166,35,0.12); color: var(--warn);    border: 1px solid rgba(245,166,35,0.3); }
     .badge-pending   { background: rgba(90,100,128,0.15); color: var(--dim);     border: 1px solid var(--border); }
+    .badge-ot        { background: rgba(255,123,0,0.12);  color: #ff7b00;        border: 1px solid rgba(255,123,0,0.3); }
 
     .no-data { text-align: center; color: var(--dim); padding: 28px; font-size: 0.85rem; }
 
@@ -148,8 +158,9 @@
       letter-spacing: 1.5px; color: var(--dim); padding: 7px 8px;
       border-bottom: 1px solid var(--border);
     }
-    .admin-table td { padding: 9px 8px; border-bottom: 1px solid #14162a; font-size: 0.8rem; }
+    .admin-table td { padding: 9px 8px; border-bottom: 1px solid #14162a; font-size: 0.8rem; vertical-align: middle; }
     .pin-cell { font-family: monospace; color: var(--warn); letter-spacing: 2px; }
+    .action-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 
     /* ── Buttons ── */
     .btn {
@@ -163,6 +174,8 @@
     .btn.success:hover { background: rgba(0,201,122,0.1); }
     .btn.danger  { border-color: var(--danger); color: var(--danger); font-size: 0.72rem; padding: 4px 10px; }
     .btn.danger:hover { background: rgba(230,57,70,0.1); }
+    .btn.warn    { border-color: var(--warn); color: var(--warn); font-size: 0.72rem; padding: 4px 10px; }
+    .btn.warn:hover { background: rgba(245,166,35,0.1); }
 
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
@@ -170,7 +183,7 @@
 
     @media(max-width:600px) {
       #summary-row { grid-template-columns: repeat(2,1fr); }
-      .lb-table th:nth-child(n+5), .lb-table td:nth-child(n+5) { display: none; }
+      .lb-table th:nth-child(n+6), .lb-table td:nth-child(n+6) { display: none; }
     }
   </style>
 </head>
@@ -215,7 +228,8 @@
 
     <!-- ── Leaderboard ── -->
     <section id="leaderboard-section" style="margin-bottom:28px;">
-      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Live Leaderboard</h2>
+      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Live Leaderboard — All Trials</h2>
+      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">Each group trial is shown as a separate row. Sorted by score (highest first). Ties broken by earliest completion time.</p>
       <table class="lb-table">
         <thead>
           <tr>
@@ -223,10 +237,11 @@
             <th>Group</th>
             <th>Score</th>
             <th>Puzzles</th>
-            <th>Time Left</th>
+            <th>Time Spent</th>
             <th>Wrong</th>
+            <th>Hints</th>
             <th>Status</th>
-            <th>Finished</th>
+            <th>Finished At</th>
           </tr>
         </thead>
         <tbody id="lb-body"></tbody>
@@ -239,10 +254,14 @@
         Scoring Formula
       </summary>
       <div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 18px;line-height:2;margin-top:8px;">
-        Each puzzle completed: <strong style="color:var(--text);">× 200 pts</strong> (max 8 × 200 = 1,600 pts)<br>
-        Time remaining bonus (win only): <strong style="color:var(--text);">× 2 pts per second</strong> (max ~3,000 pts)<br>
-        Wrong answer penalty: <strong style="color:var(--danger);">−10 pts each</strong><br>
-        <em>Maximum possible score: 4,600 pts (all 8 puzzles, no wrong answers, instant completion)</em>
+        Each puzzle (regulation): <strong style="color:var(--text);">× 200 pts</strong> (11 puzzles max = 2,200 pts)<br>
+        Each puzzle (overtime): <strong style="color:var(--text);">× 180 pts</strong><br>
+        Each puzzle (resumed game): <strong style="color:var(--text);">× 100 pts</strong><br>
+        Time remaining bonus (win, regulation only): <strong style="color:var(--text);">× 2 pts per second</strong> (max ~3,000 pts)<br>
+        Wrong answer penalty: <strong style="color:var(--danger);">−50 pts each</strong><br>
+        Hint penalty: <strong style="color:var(--danger);">−50 pts per hint used</strong><br>
+        Overtime penalty: <strong style="color:var(--danger);">−30 pts per minute after 30 min</strong><br>
+        <em>Maximum possible score: 5,200 pts (all 11 puzzles, regulation, no penalties, instant finish)</em>
       </div>
     </details>
 
@@ -251,7 +270,7 @@
       <div class="add-group-form">
         <div class="field">
           <label>Group Name</label>
-          <input type="text" id="new-name" placeholder="e.g. Group 9" />
+          <input type="text" id="new-name" placeholder="e.g. Group 9" maxlength="40" />
         </div>
         <div class="field">
           <label>PIN</label>
@@ -264,6 +283,7 @@
 
     <div class="admin-tools">
       <h3>All Groups — Full Status</h3>
+      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">Reset preserves trial history on leaderboard. Resume restores a stuck/incomplete group (reduced scoring: 100 pts/puzzle).</p>
       <table class="admin-table">
         <thead>
           <tr>
@@ -273,9 +293,13 @@
             <th>Score</th>
             <th>Puzzles</th>
             <th>Wrong</th>
+            <th>Req. Size</th>
+            <th>Online</th>
+            <th>Roster</th>
+            <th>Trials</th>
             <th>Started</th>
             <th>Finished</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="admin-tbody"></tbody>
@@ -309,9 +333,9 @@ async function api(path, method = 'GET', body = null) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtTime(secs) {
-  if (!secs && secs !== 0) return '—';
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
+  if (secs === null || secs === undefined) return '—';
+  const m = Math.floor(Math.abs(secs) / 60);
+  const s = Math.abs(secs) % 60;
   return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 function fmtDt(iso) {
@@ -321,6 +345,13 @@ function fmtDt(iso) {
 }
 function rankEmoji(i) {
   return ['🥇','🥈','🥉'][i] || `#${i+1}`;
+}
+function puzzlePips(done, total = 11) {
+  let h = '';
+  for (let i = 0; i < total; i++) {
+    h += `<span class="pip ${i < done ? 'done' : 'missing'}"></span>`;
+  }
+  return h;
 }
 
 // ── Load summary ───────────────────────────────────────────────────────────
@@ -334,38 +365,43 @@ async function loadSummary() {
   } catch {}
 }
 
-// ── Load public leaderboard ────────────────────────────────────────────────
+// ── Load leaderboard ───────────────────────────────────────────────────────
 async function loadLeaderboard() {
   try {
     const board = await api('/api/leaderboard');
     const tbody = document.getElementById('lb-body');
 
     if (!board.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="no-data">No groups have completed the game yet. 🏁</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">No groups have completed the game yet. 🏁</td></tr>';
       return;
     }
 
-    tbody.innerHTML = board.map((g, i) => `
-      <tr>
+    tbody.innerHTML = board.map((g, i) => {
+      const isOT = (g.secondsRemaining || 0) < 2100; // OT_THRESH
+      const trialLabel = g.trialNumber > 1
+        ? `<span class="trial-badge">Trial ${g.trialNumber}</span>`
+        : '';
+      const resumedLabel = g.resumed
+        ? `<span class="resumed-badge">Resumed</span>`
+        : '';
+      const timeSpent = g.timeSpentSec ? fmtTime(g.timeSpentSec) : '—';
+      return `<tr class="${g.trialNumber > 1 ? 'trial-row' : ''}">
         <td class="rank-cell">${rankEmoji(i)}</td>
-        <td class="name-cell">${g.name}</td>
-        <td class="score-cell ${i === 0 ? 'top' : ''}">${g.score.toLocaleString()}</td>
-        <td class="puzzles-cell">${puzzlePips(g.puzzlesDone)} ${g.puzzlesDone}/6</td>
-        <td class="time-cell">${g.won ? '⏱ ' + fmtTime(g.secondsRemaining) : '⏰ DNF'}</td>
-        <td class="wrong-cell">${g.wrongAnswers > 0 ? '✗ ' + g.wrongAnswers : '✓ 0'}</td>
-        <td>${g.won ? '<span class="status-badge badge-completed">PASSED</span>' : '<span class="status-badge badge-pending">TIME UP</span>'}</td>
+        <td class="name-cell">${escHtml(g.name)}${trialLabel}${resumedLabel}</td>
+        <td class="score-cell ${i === 0 ? 'top' : ''}">${(g.score||0).toLocaleString()}</td>
+        <td class="puzzles-cell">${puzzlePips(g.puzzlesDone)} <small>${g.puzzlesDone}/11</small></td>
+        <td class="time-cell">⏱ ${timeSpent}</td>
+        <td class="wrong-cell">${(g.wrongAnswers||0) > 0 ? '✗ ' + g.wrongAnswers : '✓ 0'}</td>
+        <td class="time-cell">${(g.hintPenalty||0) > 0 ? '💡 −' + g.hintPenalty + 'pts' : '—'}</td>
+        <td>${g.won ? '<span class="status-badge badge-completed">PASSED</span>' : (isOT ? '<span class="status-badge badge-ot">OVERTIME</span>' : '<span class="status-badge badge-pending">TIME UP</span>')}</td>
         <td style="font-size:0.72rem;color:var(--dim);">${fmtDt(g.completedAt)}</td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } catch {}
 }
 
-function puzzlePips(done) {
-  let h = '';
-  for (let i = 0; i < 6; i++) {
-    h += `<span class="pip ${i < done ? 'done' : 'missing'}"></span>`;
-  }
-  return h;
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 // ── Load admin panel ───────────────────────────────────────────────────────
@@ -374,34 +410,54 @@ async function loadAdminGroups() {
   try {
     const groups = await api('/api/admin/groups');
     const tbody  = document.getElementById('admin-tbody');
-    tbody.innerHTML = groups.map(g => `
-      <tr>
-        <td><strong>${g.name}</strong></td>
+    tbody.innerHTML = groups.map(g => {
+      const trialCount  = Array.isArray(g.trials) ? g.trials.length : 0;
+      const canResume   = g.status === 'completed' || g.status === 'playing';
+      const trialBadge  = g.trialGroup ? ' <span style="font-size:0.65rem;color:var(--warn);border:1px solid var(--warn);padding:1px 4px;border-radius:3px;">TRIAL</span>' : '';
+      const pausedBadge = g.livePaused ? ' <span style="font-size:0.65rem;color:var(--danger);border:1px solid var(--danger);padding:1px 4px;border-radius:3px;">PAUSED</span>' : '';
+      const lockedBadge = g.permanentlyLocked ? ' <span style="font-size:0.65rem;color:var(--dim);border:1px solid var(--dim);padding:1px 4px;border-radius:3px;">LOCKED</span>' : '';
+      const roster      = Array.isArray(g.liveRoster) && g.liveRoster.length ? g.liveRoster.join(', ') : (Array.isArray(g.lockedRoster) && g.lockedRoster.length ? g.lockedRoster.join(', ') : '—');
+      return `<tr>
+        <td><strong>${escHtml(g.name)}</strong>${trialBadge}${lockedBadge}</td>
         <td class="pin-cell">${g.pin}</td>
-        <td>${statusBadge(g.status)}</td>
-        <td>${g.score !== null ? g.score.toLocaleString() + ' pts' : '—'}</td>
-        <td>${g.puzzlesDone}/6</td>
-        <td style="color:var(--danger)">${g.wrongAnswers || 0}</td>
+        <td>${statusBadge(g.status, g.resumed)}${pausedBadge}</td>
+        <td>${g.score !== null && g.score !== undefined ? (g.score).toLocaleString() + ' pts' : (g.livePuzzles > 0 ? `~live ${g.livePuzzles}★` : '—')}</td>
+        <td>${(g.livePuzzles||g.puzzlesDone||0)}/11</td>
+        <td style="color:var(--danger)">${g.liveWrong || g.wrongAnswers || 0}</td>
+        <td style="color:var(--dim)">${g.requiredSize || '—'}</td>
+        <td style="color:${g.liveMembers > 0 ? 'var(--accent2)' : 'var(--dim)'}">${g.liveMembers || 0}${g.requiredSize ? '/' + g.requiredSize : ''}</td>
+        <td style="font-size:0.72rem;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(roster)}">${escHtml(roster)}</td>
+        <td style="color:var(--dim)">${trialCount > 0 ? trialCount + ' trial(s)' : '—'}</td>
         <td style="font-size:0.72rem;color:var(--dim)">${fmtDt(g.startedAt)}</td>
         <td style="font-size:0.72rem;color:var(--dim)">${fmtDt(g.completedAt)}</td>
-        <td>
-          <button class="btn danger" onclick="resetGroup('${g.id}', '${g.name}')">Reset</button>
+        <td class="action-btns">
+          <button class="btn danger" onclick="resetGroup('${g.id}', '${escHtml(g.name)}')">Reset</button>
+          ${canResume && !g.trialGroup ? `<button class="btn warn" onclick="resumeGroup('${g.id}', '${escHtml(g.name)}')">Resume</button>` : ''}
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }).join('');
   } catch {}
 }
 
-function statusBadge(s) {
+function statusBadge(s, resumed) {
   if (s === 'completed') return '<span class="status-badge badge-completed">Completed</span>';
-  if (s === 'playing')   return '<span class="status-badge badge-playing">Playing</span>';
+  if (s === 'playing')   return `<span class="status-badge badge-playing">${resumed ? 'Playing (Resumed)' : 'Playing'}</span>`;
   return '<span class="status-badge badge-pending">Pending</span>';
 }
 
 async function resetGroup(id, name) {
-  if (!confirm(`Reset ${name}? This clears their score and lets them play again.`)) return;
+  if (!confirm(`Reset ${name}?\n\nThis clears their current game and lets them play again.\nTrial history is preserved on the leaderboard.`)) return;
   try {
     await api('/api/admin/reset', 'POST', { groupId: id });
+    await refreshAll();
+  } catch (e) { alert(e.message); }
+}
+
+async function resumeGroup(id, name) {
+  if (!confirm(`Resume ${name}'s game?\n\nThis restores them to where they were.\nScoring is reduced to 100 pts/puzzle for resumed games.`)) return;
+  try {
+    const res = await api('/api/admin/resume', 'POST', { groupId: id });
+    alert(res.message || 'Group resumed. They can log in again to continue.');
     await refreshAll();
   } catch (e) { alert(e.message); }
 }

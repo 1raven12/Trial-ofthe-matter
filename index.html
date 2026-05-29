@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MediSeal Quality Week — Escape Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&family=Noto+Sans+Devanagari:wght@400;700&family=Noto+Sans+Tamil:wght@400;700&family=Noto+Sans+Kannada:wght@400;700&family=Noto+Sans+Telugu:wght@400;700&display=swap" rel="stylesheet">
+  <title data-t="page.title">MediSeal Quality Week — Escape Room</title>
   <style>
     /* ── Login Screen ── */
     #login-screen {
@@ -76,8 +79,8 @@
       --accent2:  #00c97a;
       --warn:     #f5a623;
       --danger:   #e63946;
-      --text:     #c4cee0;
-      --dim:      #5a6480;
+      --text:     #e8edf8;
+      --dim:      #9aaac8;
       --glow:     0 0 14px rgba(0,153,230,0.35);
       --glow2:    0 0 14px rgba(0,201,122,0.35);
     }
@@ -85,7 +88,7 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Courier New', monospace;
+      font-family: 'Heebo', 'Noto Sans Kannada', 'Noto Sans Telugu', 'Noto Sans Tamil', 'Noto Sans Devanagari', 'Mangal', 'Sanskrit Text', 'Courier New', monospace;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -106,7 +109,82 @@
     .header-left span { font-size: 0.7rem; color: var(--dim); letter-spacing: 1px; }
     #timer { font-size: 1.5rem; color: var(--warn); font-weight: bold; letter-spacing: 3px; }
     #timer.urgent { color: var(--danger); animation: blink 0.7s infinite; }
+    #timer.overtime { color: #ff7b00; animation: blink 1.2s infinite; font-size: 1.1rem; }
+    #live-score-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      font-family: 'Courier New', monospace;
+    }
+    #live-score-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; color: var(--dim); }
+    #live-score { font-size: 1.15rem; font-weight: bold; color: var(--accent2); letter-spacing: 1px; transition: color 0.4s; }
+    #live-score.gain { color: #00c97a; }
+    #live-score.loss { color: var(--danger); }
+    @keyframes scoreFlash { 0%{opacity:1} 40%{opacity:0.2} 100%{opacity:1} }
+    #live-score.flash { animation: scoreFlash 0.4s ease; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    @keyframes alarmPulse { 0%,100%{box-shadow:0 0 0 0 rgba(230,57,70,0.9),0 0 40px rgba(230,57,70,0.6)} 50%{box-shadow:0 0 0 18px rgba(230,57,70,0),0 0 80px rgba(230,57,70,0.2)} }
+    @keyframes alarmBorder { 0%,100%{border-color:#e63946} 50%{border-color:#ff7b00} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-3px)} 90%{transform:translateX(3px)} }
+
+    /* ── PAUSE OVERLAY ── */
+    #pause-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.94);
+      align-items: center; justify-content: center;
+    }
+    #pause-overlay.show { display: flex; }
+    #pause-box {
+      background: #0f0f1a;
+      border: 4px solid var(--danger);
+      border-radius: 14px;
+      padding: 36px 40px;
+      max-width: 520px; width: 94%;
+      text-align: center;
+      animation: alarmPulse 1.4s ease-in-out infinite;
+    }
+    .pause-icon  { font-size: 3.5rem; margin-bottom: 10px; }
+    .pause-title { font-size: 1.7rem; font-weight: bold; color: var(--danger); letter-spacing: 2px; margin-bottom: 12px; }
+    .pause-body  { font-size: 1rem; color: var(--warn); margin-bottom: 14px; font-weight: bold; line-height: 1.5; }
+    .pause-wait  { font-size: 0.85rem; color: var(--dim); line-height: 1.7; }
+
+    /* ── ALARM OVERLAY ── */
+    #alarm-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.88);
+      align-items: center; justify-content: center;
+    }
+    #alarm-overlay.show { display: flex; }
+    #alarm-box {
+      background: #14080a;
+      border: 4px solid #e63946;
+      border-radius: 12px;
+      padding: 32px 36px;
+      max-width: 560px; width: 94%;
+      text-align: center;
+      animation: alarmPulse 1s ease-in-out infinite, alarmBorder 1s ease-in-out infinite;
+    }
+    #alarm-box.shake { animation: shake 0.5s ease, alarmPulse 1s ease-in-out 0.5s infinite, alarmBorder 1s ease-in-out 0.5s infinite; }
+    .alarm-icon { font-size: 3.5rem; margin-bottom: 8px; animation: blink 0.6s infinite; }
+    .alarm-title { font-size: 1.7rem; font-weight: bold; color: #ff4455; letter-spacing: 2px; margin-bottom: 6px; }
+    .alarm-sub   { font-size: 1.05rem; color: #ffc040; margin-bottom: 20px; font-weight: bold; }
+    .alarm-rooms { text-align: left; margin-bottom: 22px; display: flex; flex-direction: column; gap: 10px; }
+    .alarm-room-item {
+      background: #1e0a0d;
+      border: 2px solid #e63946;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .alarm-room-name { font-size: 1.1rem; font-weight: bold; color: #ffffff; margin-bottom: 4px; }
+    .alarm-room-btn  { font-size: 1rem; color: #ffd700; }
+    .alarm-room-btn strong { background: #2a2000; border: 1px solid #ffd700; border-radius: 4px; padding: 1px 8px; }
+    #alarm-ok {
+      background: #e63946; color: #fff; border: none;
+      padding: 13px 32px; font-size: 1.15rem; font-weight: bold;
+      border-radius: 6px; cursor: pointer; width: 100%;
+      letter-spacing: 1px;
+    }
+    #alarm-ok:hover { background: #ff5566; }
 
     /* ── Layout ── */
     #game-layout {
@@ -138,6 +216,7 @@
     #room-art::before {
       content: '';
       position: absolute; inset: 0;
+      pointer-events: none;
       background: repeating-linear-gradient(
         90deg, transparent, transparent 40px,
         rgba(0,153,230,0.03) 40px, rgba(0,153,230,0.03) 41px
@@ -153,8 +232,8 @@
       font-family: 'Courier New', monospace;
     }
 
-    #room-title { padding: 14px 18px 4px; font-size: 1.05rem; color: var(--accent); letter-spacing: 1px; }
-    #room-desc  { padding: 0 18px 12px; color: var(--dim); font-size: 0.82rem; line-height: 1.65; }
+    #room-title { padding: 14px 18px 4px; font-size: 1.2rem; color: var(--accent); letter-spacing: 1px; font-weight: bold; }
+    #room-desc  { padding: 0 18px 12px; color: var(--text); font-size: 0.97rem; line-height: 1.75; }
 
     /* ── Progress Bar ── */
     #progress-bar-wrap {
@@ -165,7 +244,7 @@
       overflow: hidden;
     }
     #progress-bar { height: 100%; background: var(--accent2); width: 0%; transition: width 0.5s; }
-    #progress-label { padding: 0 18px 6px; font-size: 0.68rem; color: var(--dim); }
+    #progress-label { padding: 0 18px 6px; font-size: 0.88rem; color: var(--text); }
 
     /* ── Hotspots ── */
     #hotspots {
@@ -177,30 +256,99 @@
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 13px;
+      padding: 9px 16px;
       border-radius: 4px;
       cursor: pointer;
-      font-family: inherit; font-size: 0.78rem;
+      font-family: inherit; font-size: 0.95rem;
       transition: all 0.18s;
     }
     .hotspot-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+    .hotspot-btn.hint-btn { border-color: #4a4a1a; color: #b0a040; margin-top: 6px; font-style: italic; }
+    .hotspot-btn.hint-btn:hover:not(:disabled) { border-color: #ffd700; color: #ffd700; }
+    .hotspot-btn.hint-btn.used { opacity: 0.4; cursor: default; }
+    /* Hidden bonus question triggers — 7 distinct mechanism types across 10 spots */
+    /* Type 1: elements that become directly clickable (emoji, badge, title) */
+    #room-emoji.hq-trigger, #room-badge.hq-trigger, #room-title.hq-trigger {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #room-title.hq-trigger:hover { color: var(--accent); }
+    #room-badge.hq-trigger:hover { color: var(--text); opacity: 1; }
+    #room-emoji.hq-answered  { opacity: 0.65; }
+    #room-badge.hq-answered  { opacity: 0.5; }
+    #room-title.hq-answered  { opacity: 0.7; }
+
+    /* Type 2: tiny inline emoji appended to desc / prepended to progress label */
+    .hq-spot-inline {
+      cursor: pointer;
+      font-size: 0.82em;
+      opacity: 0.22;
+      padding: 1px 3px;
+      border-radius: 3px;
+      transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .hq-spot-inline:hover { opacity: 0.8; background: rgba(255,215,0,0.07); }
+    .hq-spot-inline.hq-done { opacity: 0.55; }
+
+    /* Type 3: tiny emoji after hotspot buttons */
+    .hq-spot-hs-suffix {
+      cursor: pointer;
+      font-size: 0.68em;
+      opacity: 0.18;
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 4px;
+      vertical-align: middle;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .hq-spot-hs-suffix:hover { opacity: 0.7; background: rgba(255,215,0,0.07); }
+    .hq-spot-hs-suffix.hq-done { opacity: 0.4; }
+
+    /* Type 4: visible emoji in corner of room-art */
+    .hq-spot-art-corner {
+      position: absolute;
+      bottom: 8px; right: 12px;
+      width: 40px; height: 40px;
+      z-index: 10;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      opacity: 0.85;
+      transition: opacity 0.2s, background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hq-spot-art-corner:hover, .hq-spot-art-corner:focus {
+      opacity: 1;
+      background: rgba(255,215,0,0.18);
+      outline: none;
+    }
+    .hq-spot-art-corner.hq-done {
+      opacity: 0.45;
+      background: rgba(0,200,100,0.15);
+    }
 
     /* ── Activity Log ── */
     #log {
       flex: 1;
-      padding: 10px 18px;
+      padding: 12px 18px;
       overflow-y: auto;
       border-top: 1px solid var(--border);
-      max-height: 175px;
-      font-size: 0.78rem; line-height: 1.75;
+      max-height: 260px;
+      font-size: 1rem; line-height: 1.85;
     }
-    #log p { margin-bottom: 2px; }
+    #log p { margin-bottom: 4px; }
     #log p.info    { color: var(--text); }
-    #log p.success { color: var(--accent2); }
-    #log p.fail    { color: var(--danger); }
-    #log p.warn    { color: var(--warn); }
-    #log p.hint    { color: var(--accent); }
-    #log p.fact    { color: #aa88ff; font-style: italic; }
+    #log p.success { color: #00e68a; font-weight: bold; }
+    #log p.fail    { color: #ff5566; font-weight: bold; }
+    #log p.warn    { color: #ffc040; font-weight: bold; }
+    #log p.hint    { color: #40c8ff; }
+    #log p.fact    { color: #c4aaff; font-style: italic; }
 
     /* ── Side Panel ── */
     #side-panel { display: flex; flex-direction: column; gap: 10px; }
@@ -212,8 +360,8 @@
       padding: 13px;
     }
     .panel-box h3 {
-      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px;
-      color: var(--dim); margin-bottom: 9px;
+      font-size: 0.82rem; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--text); margin-bottom: 9px;
       border-bottom: 1px solid var(--border); padding-bottom: 6px;
     }
 
@@ -245,28 +393,46 @@
 
     /* ── Notes ── */
     #notes-content {
-      font-size: 0.75rem; color: var(--dim); line-height: 1.7;
-      max-height: 160px; overflow-y: auto;
+      font-size: 0.9rem; color: var(--text); line-height: 1.8;
+      max-height: 200px; overflow-y: auto;
     }
-    #notes-content p { margin-bottom: 3px; padding-left: 8px; border-left: 2px solid var(--border); }
-    #notes-content p.important { border-left-color: var(--accent2); color: var(--text); }
+    #notes-content p { margin-bottom: 4px; padding-left: 8px; border-left: 2px solid var(--border); }
+    #notes-content p.important { border-left-color: var(--accent2); color: #ffffff; font-weight: bold; }
 
     /* ── Room Nav ── */
     #room-nav { display: flex; flex-direction: column; gap: 6px; }
     .nav-btn {
       background: transparent; border: 1px solid var(--border); color: var(--text);
-      padding: 7px 10px; border-radius: 4px; cursor: pointer;
-      font-family: inherit; font-size: 0.78rem; text-align: left;
+      padding: 9px 12px; border-radius: 4px; cursor: pointer;
+      font-family: inherit; font-size: 0.92rem; text-align: left;
       transition: all 0.18s;
     }
     .nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
     .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
-    .nav-btn.locked::before { content: '🔒 '; }
-    .nav-btn.open::before   { content: '▶ '; color: var(--accent); }
+    .nav-btn.prev::before { content: '← '; color: var(--accent2); }
+    .nav-btn.next-open::before { content: '→ '; color: var(--accent); }
+    .nav-btn.next-locked::before { content: '🔒 '; }
     #current-location {
       font-size: 0.68rem; color: var(--accent2); margin-top: 8px;
       border-top: 1px solid var(--border); padding-top: 8px;
     }
+    /* ── Room Path ── */
+    #room-path {
+      display: flex; align-items: center; gap: 2px;
+      margin-bottom: 8px; flex-wrap: nowrap; overflow-x: auto;
+    }
+    .rp-room {
+      font-size: 1.05rem; padding: 3px 5px; border-radius: 4px;
+      cursor: default; transition: all 0.15s;
+    }
+    .rp-room.current {
+      background: rgba(0,153,230,0.15);
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 8px rgba(0,153,230,0.2);
+    }
+    .rp-room.visited { opacity: 0.85; }
+    .rp-room.future  { opacity: 0.28; }
+    .rp-sep { color: var(--border); font-size: 0.6rem; padding: 0 1px; }
 
     /* ── Modal ── */
     #modal-overlay {
@@ -406,38 +572,27 @@
     #chat-send-btn:hover { background: rgba(0,153,230,0.1); }
     #members-online { font-size: 0.64rem; color: var(--accent2); font-weight: normal; letter-spacing: 1px; }
     /* ── Team Confirm Overlay ── */
-    #team-confirm-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.88); z-index: 250;
-      align-items: center; justify-content: center;
-    }
-    #team-confirm-overlay.show { display: flex; }
-    #team-confirm-box {
-      background: var(--panel); border: 2px solid var(--warn);
-      border-radius: 10px; padding: 26px 30px;
-      max-width: 460px; width: 92%;
-      box-shadow: 0 0 50px rgba(245,166,35,0.3);
-    }
-    #tc-code-display {
-      background: #0a0c18; border: 1px solid var(--accent);
-      border-radius: 4px; padding: 10px 14px;
-      font-size: 1.1rem; letter-spacing: 3px;
-      text-align: center; color: var(--warn);
-      margin: 12px 0; font-weight: bold;
-    }
-    #tc-input {
-      width: 100%; background: var(--bg); border: 1px solid var(--border);
-      color: var(--text); padding: 8px 12px; border-radius: 4px;
-      font-family: inherit; font-size: 0.88rem;
-      margin-bottom: 10px; outline: none;
-    }
-    #tc-input:focus { border-color: var(--warn); }
-    #tc-progress { font-size: 0.75rem; color: var(--accent2); margin: 8px 0; min-height: 18px; }
-    #tc-feedback { font-size: 0.78rem; min-height: 18px; margin-bottom: 8px; }
-    #tc-feedback.ok  { color: var(--accent2); }
-    #tc-feedback.bad { color: var(--danger); }
+
+    /* ── RTL overrides (Hebrew) ── */
+    [dir="rtl"] .nav-btn { text-align: right; }
+    [dir="rtl"] .nav-btn.prev::before { content: none; }
+    [dir="rtl"] .nav-btn.prev::after  { content: ' →'; color: var(--accent2); }
+    [dir="rtl"] #notes-content p { padding-left: 0; padding-right: 8px; border-left: none; border-right: 2px solid var(--border); }
+    [dir="rtl"] #notes-content p.important { border-right-color: var(--accent2); }
+    [dir="rtl"] #end-stats { text-align: right; }
+    [dir="rtl"] .alarm-rooms { text-align: right; }
+    [dir="rtl"] .start-card { text-align: right; }
+    [dir="rtl"] #live-score-wrap { font-family: 'Courier New', monospace; }
+    [dir="rtl"] #live-score-label { letter-spacing: 0; }
+    [dir="rtl"] .lf { text-align: right; }
+    [dir="rtl"] #lb-table th { text-align: right; }
+    [dir="rtl"] #lb-table td { text-align: right; }
+    [dir="rtl"] #lobby-status { text-align: right; }
+    [dir="rtl"] #demo-pw-box { text-align: right; }
+    [dir="rtl"] .choice-btn { text-align: right; }
   </style>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/translations.js"></script>
 </head>
 <body>
 
@@ -446,36 +601,68 @@
   <div class="login-card">
     <div class="login-logo">🏭</div>
     <div class="login-company">MediSeal Manufacturing Ltd.</div>
-    <div class="login-title">QUALITY WEEK</div>
-    <div class="login-sub">GROUP LOGIN</div>
-    <div class="login-theme">Progress in every step · Quality in every detail</div>
+    <div class="login-title" data-t="login.card_title">QUALITY WEEK</div>
+    <div class="login-sub" data-t="login.card_sub">GROUP LOGIN</div>
+    <div class="login-theme" data-t="login.card_motto">Progress in every step · Quality in every detail</div>
     <div id="login-error"></div>
     <div class="lf">
-      <label>Select Your Group</label>
+      <label data-t="login.lang">Language</label>
+      <select id="lang-select" style="width:100%;padding:9px 12px;background:var(--panel);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem;">
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="da">🇩🇰 Dansk</option>
+        <option value="pt-BR">🇧🇷 Português (Brasil)</option>
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+        <option value="te">🇮🇳 తెలుగు</option>
+        <option value="zh-Hans">🇨🇳 中文（简体）</option>
+        <option value="zh-Hant">🇹🇼 中文（繁體）</option>
+        <option value="ms">🇸🇬 Bahasa Melayu</option>
+        <option value="ta">🇸🇬 தமிழ்</option>
+        <option value="hi">🇮🇳 हिंदी</option>
+        <option value="he">🇮🇱 עברית</option>
+        <option value="sr-Latn">🇷🇸 Srpski (latinica)</option>
+        <option value="sr-Cyrl">🇷🇸 Српски (ћирилица)</option>
+      </select>
+    </div>
+    <div class="lf">
+      <label data-t="login.select_group">Select Your Group</label>
       <select id="group-select"><option value="">Loading groups…</option></select>
+      <button id="groups-retry-btn" type="button" data-t="login.retry_groups" style="display:none;margin-top:6px;padding:5px 14px;font-size:0.78rem;cursor:pointer;background:var(--accent);color:#fff;border:none;border-radius:4px;" onclick="initLogin()">↺ Retry</button>
     </div>
     <div class="lf">
-      <label>Group PIN</label>
-      <input type="password" id="group-pin" placeholder="Enter your group PIN" maxlength="10" />
+      <label data-t="login.group_pin">Group PIN</label>
+      <input type="password" id="group-pin" data-t-ph="login.enter_pin" placeholder="Enter your group PIN" maxlength="10" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
     </div>
     <div class="lf">
-      <label>Your Name</label>
-      <input type="text" id="member-name" placeholder="e.g. Alice" maxlength="24" autocomplete="off" />
+      <label data-t="login.group_size">How many people are in your group?</label>
+      <select id="group-size-select">
+        <option value="" data-t="login.group_size_ph">— Select group size —</option>
+        <option value="3" data-t="login.group_size_3">3 players</option>
+        <option value="4" data-t="login.group_size_4">4 players</option>
+        <option value="5" data-t="login.group_size_5">5 players</option>
+      </select>
     </div>
-    <button class="btn primary login-submit" id="login-btn">LOGIN &amp; ENTER FACILITY</button>
+    <div class="lf">
+      <label data-t="login.your_name">Your Name</label>
+      <input type="text" id="member-name" data-t-ph="login.enter_name" placeholder="e.g. Alice" maxlength="24" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+    </div>
+    <button class="btn primary login-submit" id="login-btn" data-t="login.btn">LOGIN &amp; ENTER FACILITY</button>
     <div class="login-links">
-      <a href="#" id="demo-link">▶ Demo / Admin Mode</a>
+      <a href="#" id="demo-link" data-t="login.demo">▶ Demo / Admin Mode</a>
       &nbsp;·&nbsp;
-      <a href="#" id="lb-open-link">📊 Leaderboard</a>
+      <a href="#" id="lb-open-link" data-t="login.leaderboard">📊 Leaderboard</a>
     </div>
     <!-- Admin demo password prompt (hidden by default) -->
     <div id="demo-pw-box" style="display:none;margin-top:12px;text-align:left;">
       <div class="lf" style="margin-bottom:8px;">
-        <label>Admin Password (required for Demo)</label>
-        <input type="password" id="demo-pw-input" placeholder="Enter admin password" maxlength="60" />
+        <label data-t="login.admin_pw_label">Admin Password (required for Demo)</label>
+        <input type="password" id="demo-pw-input" data-t-ph="login.admin_pw_ph" placeholder="Enter admin password" maxlength="60" />
       </div>
       <div id="demo-pw-error" style="color:var(--danger);font-size:0.75rem;min-height:16px;margin-bottom:6px;"></div>
-      <button class="btn primary" id="demo-pw-btn" style="width:100%;">Enter Demo Mode</button>
+      <button class="btn primary" id="demo-pw-btn" data-t="login.demo_btn" style="width:100%;">Enter Demo Mode</button>
     </div>
   </div>
 </div>
@@ -483,34 +670,34 @@
 <!-- ═══════════════ LEADERBOARD MODAL ═══════════════ -->
 <div id="lb-overlay">
   <div id="lb-box">
-    <h2>📊 Leaderboard</h2>
+    <h2 data-t="lb.h2">📊 Leaderboard</h2>
     <div id="lb-pw-section">
       <div class="lf" style="margin-bottom:6px;">
-        <label>Admin Password</label>
-        <input type="password" id="lb-pw-input" placeholder="Enter admin password" maxlength="60" autocomplete="off" />
+        <label data-t="lb.admin_pw">Admin Password</label>
+        <input type="password" id="lb-pw-input" data-t-ph="lb.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="off" />
       </div>
       <div id="lb-pw-error"></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn primary" id="lb-pw-btn" style="flex:1;">View Leaderboard</button>
-        <button class="btn" id="lb-close-btn">Close</button>
+        <button class="btn primary" id="lb-pw-btn" style="flex:1;" data-t="lb.view_btn">View Leaderboard</button>
+        <button class="btn" id="lb-close-btn" data-t="lb.close_btn">Close</button>
       </div>
     </div>
     <div id="lb-content" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <span style="font-size:0.72rem;color:var(--dim);letter-spacing:1px;">COMPLETED GROUPS — RANKED BY SCORE</span>
-        <button class="btn" id="lb-close-btn2" style="font-size:0.75rem;padding:4px 12px;">Close</button>
+        <span data-t="lb.completed_groups" style="font-size:0.72rem;color:var(--dim);letter-spacing:1px;">COMPLETED GROUPS — RANKED BY SCORE</span>
+        <button class="btn" id="lb-close-btn2" data-t="lb.close_btn2" style="font-size:0.75rem;padding:4px 12px;">Close</button>
       </div>
-      <div id="lb-empty" style="display:none;color:var(--dim);font-size:0.85rem;padding:20px 0;text-align:center;">No groups have completed the game yet.</div>
+      <div id="lb-empty" data-t="lb.empty" style="display:none;color:var(--dim);font-size:0.85rem;padding:20px 0;text-align:center;">No groups have completed the game yet.</div>
       <table id="lb-table">
         <thead>
           <tr>
             <th>#</th>
-            <th>Group</th>
-            <th>Score</th>
-            <th>Puzzles</th>
-            <th>Time Left</th>
-            <th>Wrong</th>
-            <th>Finished</th>
+            <th data-t="lb.col_group">Group</th>
+            <th data-t="lb.col_score">Score</th>
+            <th data-t="lb.col_puzzles">Puzzles</th>
+            <th data-t="lb.col_time_left">Time Left</th>
+            <th data-t="lb.col_wrong">Wrong</th>
+            <th data-t="lb.col_finished">Finished</th>
           </tr>
         </thead>
         <tbody id="lb-tbody"></tbody>
@@ -524,13 +711,13 @@
   <div class="login-card">
     <div class="login-logo">✅</div>
     <div class="login-company">MediSeal Manufacturing Ltd.</div>
-    <div class="login-title">ALREADY COMPLETED</div>
-    <div class="login-sub" style="margin-bottom:18px">YOUR GROUP HAS PLAYED</div>
-    <p style="color:var(--dim);font-size:0.85rem;margin-bottom:20px;line-height:1.7;">
+    <div class="login-title" data-t="already.title">ALREADY COMPLETED</div>
+    <div class="login-sub" data-t="already.sub" style="margin-bottom:18px">YOUR GROUP HAS PLAYED</div>
+    <p data-t-html="already.body" style="color:var(--dim);font-size:0.85rem;margin-bottom:20px;line-height:1.7;">
       Your group has already completed the Quality Week escape room.<br>
       Each group can only play once. Check the leaderboard to see your score!
     </p>
-    <a href="/admin.html" target="_blank" class="btn success" style="display:block;text-align:center;padding:10px;text-decoration:none;">
+    <a href="/admin.html" target="_blank" data-t="already.lb_btn" class="btn success" style="display:block;text-align:center;padding:10px;text-decoration:none;">
       📊 View Leaderboard
     </a>
   </div>
@@ -540,142 +727,157 @@
 <div id="startscreen">
   <div class="start-logo">🏭</div>
   <div class="start-company">MediSeal Manufacturing Ltd.</div>
-  <div class="start-title">QUALITY WEEK</div>
-  <div class="start-sub">ESCAPE ROOM — INTERNAL AUDIT SIMULATION</div>
-  <div style="font-size:0.65rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:-14px;margin-bottom:18px;opacity:0.7;">Progress in every step · Quality in every detail</div>
+  <div class="start-title" data-t="start.title">QUALITY WEEK</div>
+  <div class="start-sub" data-t="start.sub">ESCAPE ROOM — INTERNAL AUDIT SIMULATION</div>
+  <div data-t="start.card_motto" style="font-size:0.65rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:-14px;margin-bottom:18px;opacity:0.7;">Progress in every step · Quality in every detail</div>
   <div id="group-greeting" style="font-size:0.82rem;color:var(--accent2);margin-bottom:10px;letter-spacing:1px;"></div>
 
   <div class="start-card">
-    <h3>Situation Briefing</h3>
-    A <strong>critical non-conformance alarm</strong> has triggered a facility lockdown at MediSeal's
+    <h3 data-t="start.briefing_h">Situation Briefing</h3>
+    <span data-t-html="start.briefing">A <strong>critical non-conformance alarm</strong> has triggered a facility lockdown at MediSeal's
     plunger production plant. The batch <strong>BN-2024-3200</strong> — rubber plungers destined for
     insulin vials and diabetic injection devices — is on hold pending investigation.<br><br>
     As the on-call <strong>Quality Inspector</strong>, you must work through every station:
     verify incoming materials, complete an AQL inspection, calibrate instruments, raise a CAPA,
     and authorise the final batch disposition — all before the <strong>external FDA auditor
-    arrives in 25 minutes</strong>.
+    arrives in 30 minutes</strong>.</span>
   </div>
 
   <div class="start-card">
-    <h3>Quality Topics Covered</h3>
+    <h3 data-t="start.topics_h">చర్చించిన నాణ్యత అంశాలు</h3>
     <span class="tag">GMP</span>
     <span class="tag">AQL / ISO 2859-1</span>
     <span class="tag">CAPA</span>
     <span class="tag">ISO 13485</span>
-    <span class="tag">Calibration</span>
-    <span class="tag">Batch Records</span>
+    <span class="tag" data-t="topic.calibration">క్రమాంకనం</span>
+    <span class="tag" data-t="topic.batch_records">బ్యాచ్ రికార్డులు</span>
     <span class="tag">NCR</span>
-    <span class="tag">Visual Inspection</span>
-    <span class="tag">Defect Classification</span>
-    <span class="tag">SOP Compliance</span>
+    <span class="tag" data-t="topic.visual_inspection">దృశ్య తనిఖీ</span>
+    <span class="tag" data-t="topic.defect_class">లోప వర్గీకరణ</span>
+    <span class="tag" data-t="topic.sop_compliance">SOP అనుసరణ</span>
     <span class="tag">ISO 9001:2015</span>
     <span class="tag">ISO 15378:2017</span>
-    <span class="tag">Risk-Based Thinking</span>
+    <span class="tag" data-t="topic.risk_thinking">జోఖిమ-ఆధారిత ఆలోచన</span>
   </div>
 
   <div class="start-card" style="font-size:0.82rem;">
-    <h3>How to Play</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;line-height:1.9;">
-      <div>🔍 <strong style="color:var(--text);">Examine hotspots</strong> in each area to find clues and collect items</div>
-      <div>🎒 <strong style="color:var(--text);">Select an item</strong> from your inventory, then click a hotspot to use it</div>
-      <div>🧩 <strong style="color:var(--text);">Solve puzzles</strong> — every answer is grounded in real quality principles</div>
-      <div>📋 <strong style="color:var(--text);">Check Field Notes</strong> — clues and facts are recorded automatically</div>
-      <div>💬 <strong style="color:var(--text);">Use Group Chat</strong> — coordinate with your team in real time</div>
-      <div>🔑 <strong style="color:var(--text);">Confirm codes together</strong> — key milestones require all members to enter the code</div>
-    </div>
-    <div style="margin-top:10px;padding:8px 12px;background:rgba(0,153,230,0.07);border-left:3px solid var(--accent);border-radius:2px;font-size:0.77rem;color:var(--dim);line-height:1.7;">
-      There are <strong style="color:var(--text);">5 areas</strong> and <strong style="color:var(--text);">8 puzzles</strong> to complete in <strong style="color:var(--text);">25 minutes</strong>.
-      Areas unlock as you progress — you cannot skip ahead.
+    <h3 data-t="start.how_h">ఆట విధానం</h3>
+    <div data-t-html="start.how_content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;line-height:1.9;">
+        <div>🔍 <strong style="color:var(--text);">హాట్‌స్పాట్లను పరీక్షించండి</strong> — ప్రతి ప్రాంతంలో సూచనలు కనుగొని వస్తువులు సేకరించండి</div>
+        <div>🎒 <strong style="color:var(--text);">వస్తువు ఎంచుకోండి</strong> — మీ జాబితా నుండి వస్తువు ఎంచుకుని హాట్‌స్పాట్‌పై క్లిక్ చేయండి</div>
+        <div>🧩 <strong style="color:var(--text);">పజిల్‌లు పరిష్కరించండి</strong> — ప్రతి సమాధానం నిజమైన నాణ్యత సూత్రాలపై ఆధారపడింది</div>
+        <div>📋 <strong style="color:var(--text);">ఫీల్డ్ నోట్స్ తనిఖీ చేయండి</strong> — సూచనలు మరియు వాస్తవాలు స్వయంచాలకంగా నమోదవుతాయి</div>
+        <div>💬 <strong style="color:var(--text);">గ్రూప్ చాట్ వాడండి</strong> — మీ జట్టుతో నిజ సమయంలో సమన్వయం చేసుకోండి</div>
+        <div>🔑 <strong style="color:var(--text);">పనులు వ్యక్తిగతంగా పూర్తి చేయండి</strong> — ప్రతి ఆటగాడు వ్యక్తిగతంగా ప్రతి పజిల్ పరిష్కరించాలి, లేదా బృందం ముందుకు వెళ్ళదు</div>
+      </div>
+      <div style="margin-top:10px;padding:8px 12px;background:rgba(0,153,230,0.07);border-left:3px solid var(--accent);border-radius:2px;font-size:0.77rem;color:var(--dim);line-height:1.7;">
+        <strong style="color:var(--text);">5 ప్రాంతాలు</strong> మరియు <strong style="color:var(--text);">11 పజిల్‌లు</strong> <strong style="color:var(--text);">30 నిమిషాల్లో</strong> పూర్తి చేయాలి. ముందుకు వెళ్ళేకొద్దీ ప్రాంతాలు తెరవబడతాయి — ముందుకు దాటడం సాధ్యం కాదు.
+      </div>
     </div>
   </div>
 
   <div class="start-card" style="font-size:0.81rem;">
-    <h3>Rules</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px 7px 0;width:28px;font-size:1rem;">👥</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Team size:</strong> 3 – 5 members. All must be connected before the game starts.</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px 7px 0;font-size:1rem;">⏱️</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Simultaneous start:</strong> Every player must click <em>"I'm Ready"</em>. The timer starts for all at the same moment.</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px 7px 0;font-size:1rem;">🔑</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Team confirmation:</strong> At key checkpoints the code is revealed to all — every member must type it to proceed.</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px 7px 0;font-size:1rem;">🚪</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Area locks:</strong> Each area is locked until the previous task is completed — complete tasks in order.</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:7px 8px 7px 0;font-size:1rem;">❌</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">Wrong answers:</strong> Each incorrect answer deducts <strong style="color:var(--danger);">10 points</strong> from your final score — think before you submit.</td>
-      </tr>
-      <tr>
-        <td style="padding:7px 8px 7px 0;font-size:1rem;">🏁</td>
-        <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">One attempt:</strong> Each group plays once. Results are final and posted to the leaderboard.</td>
-      </tr>
-    </table>
-  </div>
-
-  <div class="start-card" style="font-size:0.81rem;">
-    <h3>Scoring</h3>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
-      <thead>
+    <h3 data-t="start.rules_h">నియమాలు</h3>
+    <div data-t-html="start.rules_content">
+      <table style="width:100%;border-collapse:collapse;">
         <tr style="border-bottom:1px solid var(--border);">
-          <th style="text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">What</th>
-          <th style="text-align:right;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">Points</th>
+          <td style="padding:7px 8px 7px 0;width:28px;font-size:1rem;">👥</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">బృంద పరిమాణం:</strong> 3 – 5 సభ్యులు. ఆట ప్రారంభమయ్యే ముందు అందరూ కనెక్ట్ అయి ఉండాలి.</td>
         </tr>
-      </thead>
-      <tbody>
-        <tr style="border-bottom:1px solid #14162a;">
-          <td style="padding:8px 0;color:var(--dim);">✅ Each puzzle solved</td>
-          <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+200 pts</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">⏱️</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ఒకే సమయంలో ప్రారంభం:</strong> ప్రతి ఆటగాడు <em>"నేను సిద్ధం"</em> క్లిక్ చేయాలి. అందరికీ ఒకే సమయంలో టైమర్ ప్రారంభమవుతుంది.</td>
         </tr>
-        <tr style="border-bottom:1px solid #14162a;">
-          <td style="padding:8px 0;color:var(--dim);">⏱️ Every second remaining on the clock <em>(win only)</em></td>
-          <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+2 pts / sec</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">👤</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">వ్యక్తిగత అవసరం:</strong> ప్రతి ఆటగాడు స్వతంత్రంగా ప్రతి పని పూర్తి చేయాలి. మీరు వ్యక్తిగతంగా పూర్తి చేయకుండా గది దాటలేరు.</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">🚪</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ప్రాంత తాళాలు:</strong> ముందు పని పూర్తయ్యేంత వరకు ప్రతి ప్రాంతం తాళంలో ఉంటుంది — క్రమంలో పనులు పూర్తి చేయండి.</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">❌</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">తప్పు సమాధానాలు:</strong> తప్పు సమాధానం తుది స్కోర్ నుండి <strong style="color:var(--danger);">50 పాయింట్లు</strong> తగ్గిస్తుంది — సమర్పించే ముందు ఆలోచించండి.</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">💡</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">సూచనలు:</strong> ప్రతి ప్రాంతంలో ఒక సూచన అందుబాటులో ఉంటుంది. సూచన వాడితే <strong style="color:var(--danger);">−60 సెకన్లు</strong> మరియు <strong style="color:var(--danger);">−50 పాయింట్లు</strong> తగ్గుతాయి. సూచనలు సూక్ష్మమైనవి — సమాధానం నేరుగా ఇవ్వవు.</td>
         </tr>
         <tr>
-          <td style="padding:8px 0;color:var(--dim);">❌ Each wrong answer</td>
-          <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−10 pts</td>
+          <td style="padding:7px 8px 7px 0;font-size:1rem;">🏁</td>
+          <td style="padding:7px 0;color:var(--dim);"><strong style="color:var(--text);">ఒకే అవకాశం:</strong> ప్రతి బృందం ఒకసారే ఆడగలదు. ఫలితాలు తుది మరియు లీడర్‌బోర్డ్‌లో నమోదవుతాయి.</td>
         </tr>
-      </tbody>
-    </table>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-      <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
-        <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">Max puzzle pts</div>
-        <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">1,600</div>
-        <div style="font-size:0.68rem;color:var(--dim);">8 × 200</div>
+      </table>
+    </div>
+    <p id="rules-english-note" data-t="rules.english_answers" style="margin-top:8px;font-size:0.75rem;color:var(--dim);border-top:1px solid var(--border);padding-top:8px;"></p>
+  </div>
+
+  <div class="start-card" style="font-size:0.81rem;">
+    <h3 data-t="start.scoring_h">స్కోరింగ్</h3>
+    <div data-t-html="start.scoring_content">
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">ఏమిటి</th>
+            <th style="text-align:right;font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);padding:5px 0;">పాయింట్లు</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #14162a;">
+            <td style="padding:8px 0;color:var(--dim);">✅ ప్రతి పజిల్ పరిష్కరించినందుకు</td>
+            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+200 పాయింట్లు</td>
+          </tr>
+          <tr style="border-bottom:1px solid #14162a;">
+            <td style="padding:8px 0;color:var(--dim);">⏱️ గడియారంలో మిగిలిన ప్రతి సెకన్ <em>(గెలుపులో మాత్రమే)</em></td>
+            <td style="padding:8px 0;text-align:right;color:var(--accent2);font-weight:bold;">+2 పాయింట్లు / సె</td>
+          </tr>
+          <tr style="border-bottom:1px solid #14162a;">
+            <td style="padding:8px 0;color:var(--dim);">❌ ప్రతి తప్పు సమాధానం</td>
+            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 పాయింట్లు</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:var(--dim);">💡 సూచన వాడినందుకు</td>
+            <td style="padding:8px 0;text-align:right;color:var(--danger);font-weight:bold;">−50 పాయింట్లు &amp; −60సె</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
+          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">గరిష్ట పజిల్ పాయింట్లు</div>
+          <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">2,200</div>
+          <div style="font-size:0.68rem;color:var(--dim);">11 × 200</div>
+        </div>
+        <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
+          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">గరిష్ట సమయ బోనస్</div>
+          <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">3,600</div>
+          <div style="font-size:0.68rem;color:var(--dim);">1,800 సె × 2</div>
+        </div>
       </div>
-      <div style="background:#0a0c18;border:1px solid var(--border);border-radius:6px;padding:10px 14px;text-align:center;">
-        <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:4px;">Max time bonus</div>
-        <div style="font-size:1.2rem;font-weight:bold;color:var(--accent2);">3,000</div>
-        <div style="font-size:0.68rem;color:var(--dim);">1,500 sec × 2</div>
+      <div style="margin-top:8px;padding:8px 12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:4px;text-align:center;font-size:0.78rem;color:#ffd700;">
+        🏆 గరిష్ట సాధ్యమైన స్కోర్: <strong>5,800 పాయింట్లు</strong> — అన్ని పజిల్‌లు పరిష్కరించి, తప్పు సమాధానాలు లేకుండా, సూచనలు వాడకుండా, వెంటనే పూర్తి చేయడం
       </div>
     </div>
-    <div style="margin-top:8px;padding:8px 12px;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:4px;text-align:center;font-size:0.78rem;color:#ffd700;">
-      🏆 Maximum possible score: <strong>4,600 pts</strong> — all puzzles solved, no wrong answers, instant finish
-    </div>
+    <div data-t-html="start.scoring_hq"></div>
   </div>
 
   <!-- Lobby status (shown after login, hidden in demo mode) -->
   <div id="lobby-status" style="display:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-top:10px;max-width:460px;width:100%;text-align:left;">
-    <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">👥 TEAM LOBBY</div>
-    <div id="lobby-members" style="font-size:0.82rem;color:var(--dim);margin-bottom:8px;">Connecting…</div>
+    <div data-t="start.lobby_h" style="font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:10px;">👥 TEAM LOBBY</div>
+    <div id="lobby-members" data-t="start.connecting" style="font-size:0.82rem;color:var(--dim);margin-bottom:8px;">Connecting…</div>
     <div id="lobby-ready-bar" style="font-size:0.8rem;color:var(--accent2);margin-bottom:8px;min-height:18px;"></div>
     <div id="lobby-error-msg" style="font-size:0.78rem;color:var(--danger);min-height:16px;"></div>
-    <p style="font-size:0.73rem;color:var(--dim);margin-top:6px;line-height:1.6;">
+    <p data-t-html="start.lobby_hint" style="font-size:0.73rem;color:var(--dim);margin-top:6px;line-height:1.6;">
       Groups of <strong style="color:var(--text);">3–5 members</strong> must all be connected before starting.<br>
       All members click <strong style="color:var(--text);">I'm Ready</strong> to begin simultaneously.
     </p>
   </div>
 
-  <button class="btn primary" id="start-btn" style="font-size:0.95rem;padding:11px 36px;margin-top:10px;">
+  <button class="btn primary" id="start-btn" data-t="start.ready_btn" style="font-size:0.95rem;padding:11px 36px;margin-top:10px;">
     I'M READY — BEGIN
   </button>
-  <div id="start-waiting" style="display:none;font-size:0.8rem;color:var(--dim);margin-top:8px;letter-spacing:1px;">
+  <div id="start-waiting" data-t="start.waiting" style="display:none;font-size:0.8rem;color:var(--dim);margin-top:8px;letter-spacing:1px;">
     ⏳ Waiting for teammates to confirm…
   </div>
 </div>
@@ -683,10 +885,14 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header>
   <div class="header-left">
-    <h1>🏭 MediSeal — Quality Week</h1>
-    <span>PROGRESS IN EVERY STEP · QUALITY IN EVERY DETAIL</span>
+    <h1 data-t="header.title">🏭 MediSeal — Quality Week</h1>
+    <span data-t="header.motto">PROGRESS IN EVERY STEP · QUALITY IN EVERY DETAIL</span>
   </div>
-  <div id="timer">25:00</div>
+  <div id="live-score-wrap">
+    <span id="live-score-label" data-t="score.live_label">Score</span>
+    <span id="live-score">0</span>
+  </div>
+  <div id="timer">30:00</div>
 </header>
 
 <!-- ═══════════════ GAME LAYOUT ═══════════════ -->
@@ -707,38 +913,59 @@
 
   <div id="side-panel">
     <div class="panel-box">
-      <h3>Inventory</h3>
+      <h3 data-t="side.inventory">Inventory</h3>
       <div id="inventory-grid"></div>
     </div>
     <div class="panel-box">
-      <h3>Field Notes</h3>
-      <div id="notes-content"><p>No entries yet.</p></div>
+      <h3 data-t="side.field_notes">Field Notes</h3>
+      <div id="notes-content"><p data-t="side.no_entries">No entries yet.</p></div>
     </div>
     <div class="panel-box">
       <h3 style="display:flex;align-items:center;justify-content:space-between;">
-        Group Chat <span id="members-online"></span>
+        <span data-t="side.group_chat">Group Chat</span> <span id="members-online"></span>
       </h3>
       <div id="chat-msgs"></div>
       <div id="chat-input-row">
-        <input type="text" id="chat-input" placeholder="Connect first…" maxlength="200" autocomplete="off" disabled />
+        <input type="text" id="chat-input" data-t-ph="side.chat_ph" placeholder="Connect first…" maxlength="200" autocomplete="off" disabled />
         <button id="chat-send-btn" title="Send">↑</button>
       </div>
     </div>
     <div class="panel-box">
-      <h3>Areas</h3>
+      <h3 data-t="side.areas">Areas</h3>
       <div id="room-nav"></div>
     </div>
   </div>
 </div>
 
+<!-- ═══════════════ PAUSE OVERLAY ═══════════════ -->
+<div id="pause-overlay">
+  <div id="pause-box">
+    <div class="pause-icon">⏸</div>
+    <div class="pause-title" data-t="pause.title">GAME PAUSED</div>
+    <div class="pause-body" id="pause-body"></div>
+    <div class="pause-wait" id="pause-waiting"></div>
+  </div>
+</div>
+
 <!-- ═══════════════ MODAL ═══════════════ -->
+<!-- ALARM OVERLAY -->
+<div id="alarm-overlay">
+  <div id="alarm-box">
+    <div class="alarm-icon">🚨</div>
+    <div class="alarm-title" id="alarm-title">⚠ STOP — GO BACK!</div>
+    <div class="alarm-sub" id="alarm-sub">PIN is correct — but you have unfinished checks!</div>
+    <div class="alarm-rooms" id="alarm-rooms"></div>
+    <button id="alarm-ok" onclick="closeAlarm()">✓ UNDERSTOOD — I WILL GO BACK NOW</button>
+  </div>
+</div>
+
 <div id="modal-overlay">
   <div id="modal-box">
     <div id="modal-tag">QUALITY CONTROL</div>
     <div id="modal-title">Puzzle Title</div>
     <div id="modal-body">Body text.</div>
     <div id="modal-choices"></div>
-    <input type="text" id="modal-input" placeholder="" style="display:none" />
+    <input type="text" id="modal-input" placeholder="" style="display:none" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" maxlength="100" />
     <div id="modal-feedback"></div>
     <div class="modal-btns">
       <button class="btn" id="modal-cancel">Close</button>
@@ -753,79 +980,168 @@
   <div id="end-title">Audit Passed!</div>
   <div id="end-msg">You completed all quality checks.</div>
   <div id="end-stats"></div>
-  <a href="/admin.html" target="_blank" class="btn success" style="font-size:0.9rem;padding:10px 28px;text-decoration:none;">
+  <a href="/admin.html" target="_blank" data-t="end.lb_btn" class="btn success" style="font-size:0.9rem;padding:10px 28px;text-decoration:none;">
     📊 View Leaderboard
   </a>
 </div>
 
-<!-- ═══════════════ TEAM CONFIRM OVERLAY ═══════════════ -->
-<div id="team-confirm-overlay">
-  <div id="team-confirm-box">
-    <div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--warn);margin-bottom:6px;">🔑 TEAM CONFIRMATION REQUIRED</div>
-    <div id="tc-title" style="font-size:1rem;color:var(--text);margin-bottom:10px;font-weight:bold;"></div>
-    <div id="tc-body" style="font-size:0.82rem;color:var(--dim);line-height:1.7;margin-bottom:6px;"></div>
-    <div id="tc-code-display"></div>
-    <p style="font-size:0.75rem;color:var(--dim);margin-bottom:8px;">Type the code above to confirm you've received it:</p>
-    <input type="text" id="tc-input" placeholder="Enter the code…" maxlength="20" autocomplete="off" />
-    <div id="tc-feedback"></div>
-    <div id="tc-progress"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn primary" id="tc-submit">Confirm</button>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════ SCRIPT ═══════════════ -->
 <script>
 'use strict';
 
+// ── Client-side correct answers for hidden bonus questions (mirror of server HQ_ANSWERS) ──
+const HQ_CORRECT_OPTS = {
+  hq_receiving_1:  'a',
+  hq_receiving_2:  'c',
+  hq_production_1: 'b',
+  hq_production_2: 'b',
+  hq_qclab_1:      'b',
+  hq_qclab_2:      'b',
+  hq_qaoffice_1:   'b',
+  hq_qaoffice_2:   'a',
+  hq_dispatch_1:   'a',
+  hq_dispatch_2:   'a',
+};
+
+// Deterministic position hash — same group+room+spot → same position for all players
+function strHash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 // ────────────────────────────────────────────────
 // STATE
 // ────────────────────────────────────────────────
 const S = {
-  room:         'receiving',
-  inventory:    [],
-  selectedItem: null,
-  notes:        [],
-  solved:       {},
-  found:        {},
-  puzzlesDone:  0,
-  timerSec:     25 * 60,
-  timerInt:     null,
-  over:         false,
-  wrongAnswers: 0,
-  authToken:    null,
-  groupName:    null,
-  demoMode:     false,
-  finalScore:   null,
-  memberName:  null,
-  socket:      null,
+  room:          'receiving',
+  inventory:     [],
+  selectedItem:  null,
+  notes:         [],
+  solved:        {},   // group-level: all players done
+  mySolved:      {},   // per-player: what I personally completed
+  found:         {},
+  puzzlesDone:   0,
+  timerSec:      30 * 60,
+  timerInt:      null,
+  over:          false,
+  wrongAnswers:  0,
+  hintsUsed:     {},
+  hintPenalty:   0,
+  authToken:     null,
+  groupName:     null,
+  demoMode:      false,
+  finalScore:    null,
+  memberName:    null,
+  socket:        null,
+  lang:          localStorage.getItem('qw_lang') || 'en',
+  requiredSize:  0,    // required group size (from server)
+  groupSize:     0,    // group size selected at login
+  lockedRoster:  [],   // locked player names
+  paused:        false,// game paused due to disconnect
+  resumed:       false,// game was resumed (reduces pts/puzzle to 100)
+  membersOnline: [],   // current online members
+  hiddenAnswers: {},   // hqId → result object from server (group-level, one per HQ)
+  hiddenBonus:   0,    // accumulated bonus points from correct hidden questions
 };
+
+// Language selector — run once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('lang-select');
+  if (sel) {
+    sel.value = S.lang;
+    sel.addEventListener('change', () => {
+      S.lang = sel.value;
+      localStorage.setItem('qw_lang', S.lang);
+      applyTranslations();
+      // re-render group dropdown placeholder in current language
+      const gs = document.getElementById('group-select');
+      if (gs && gs.options.length > 0) gs.options[0].text = t('login.select_group_placeholder');
+      // re-render nav/room if game already started
+      if (document.getElementById('game-layout') &&
+          document.getElementById('game-layout').style.display !== 'none') {
+        renderRoom(); renderNav(); updateProgress();
+      }
+    });
+  }
+  applyTranslations();
+});
 
 // ────────────────────────────────────────────────
 // API HELPERS
 // ────────────────────────────────────────────────
-async function apiCall(path, method = 'GET', body = null) {
+async function apiCall(path, method = 'GET', body = null, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const opts = {
     method,
+    signal: controller.signal,
     headers: {
       'Content-Type': 'application/json',
       ...(S.authToken ? { 'X-Auth-Token': S.authToken } : {}),
     },
   };
   if (body) opts.body = JSON.stringify(body);
-  const res  = await fetch(path, opts);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
+  try {
+    const res  = await fetch(path, opts);
+    const data = await res.json();
+    if (!res.ok) {
+      const err = new Error(data.error || 'Request failed');
+      if (data.code)     err.code     = data.code;
+      if (data.required) err.required = data.required;
+      throw err;
+    }
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function calcScore(won) {
+  const isOvertime    = S.timerSec < OT_THRESH_CLIENT;
+  const ptPer         = S.resumed ? 100 : (isOvertime ? 180 : 200);
+  const regSecsLeft   = isOvertime ? 0 : (S.timerSec - OT_THRESH_CLIENT);
+  const timeBonus     = (won && !isOvertime) ? regSecsLeft * 2 : 0;
+  const otSecs        = isOvertime ? (OT_THRESH_CLIENT - S.timerSec) : 0;
+  const otPenalty     = Math.ceil(otSecs / 60) * 30;
   return Math.max(0,
-    (S.puzzlesDone * 200) +
-    (won ? S.timerSec * 2 : 0) -
-    (S.wrongAnswers * 10)
+    (S.puzzlesDone * ptPer) +
+    timeBonus +
+    (S.hiddenBonus || 0) -
+    (S.wrongAnswers * WRONG_PTS_CLIENT) -
+    (S.hintPenalty || 0) -
+    otPenalty
   );
+}
+
+function updateLiveScore() {
+  const el = document.getElementById('live-score');
+  if (!el) return;
+  const prev = parseInt(el.dataset.prev || '0', 10);
+  // Base score (excludes time bonus — that's determined at game-end)
+  const isOvertime  = S.timerSec < OT_THRESH_CLIENT;
+  const ptPer       = S.resumed ? 100 : (isOvertime ? 180 : 200);
+  const otSecs      = isOvertime ? (OT_THRESH_CLIENT - S.timerSec) : 0;
+  const otPenalty   = Math.ceil(otSecs / 60) * 30;
+  const score = Math.max(0,
+    (S.puzzlesDone * ptPer) +
+    (S.hiddenBonus || 0) -
+    (S.wrongAnswers * WRONG_PTS_CLIENT) -
+    (S.hintPenalty || 0) -
+    otPenalty
+  );
+  el.textContent    = score.toLocaleString();
+  el.dataset.prev   = score;
+  // Flash color to indicate change direction
+  el.classList.remove('gain', 'loss', 'flash');
+  void el.offsetWidth; // reflow to restart animation
+  if (score > prev)      el.classList.add('gain', 'flash');
+  else if (score < prev) el.classList.add('loss', 'flash');
+  setTimeout(() => el.classList.remove('gain', 'loss', 'flash'), 600);
 }
 
 async function submitScore(won) {
@@ -842,13 +1158,21 @@ async function submitScore(won) {
 async function initLogin() {
   const sel = document.getElementById('group-select');
   const err = document.getElementById('login-error');
+  const retryBtn = document.getElementById('groups-retry-btn');
+  sel.innerHTML = `<option value="">${t('login.loading_groups')}</option>`;
+  if (retryBtn) retryBtn.style.display = 'none';
   try {
     const groups = await apiCall('/api/groups');
-    sel.innerHTML = '<option value="">— Select your group —</option>' +
-      groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    sel.innerHTML = `<option value="">${t('login.select_group_placeholder')}</option>` +
+      groups.map(g => {
+        const locked = g.permanentlyLocked && !g.trialGroup;
+        const label  = locked ? `${g.name} ✓` : g.name;
+        return `<option value="${g.id}"${locked ? ' disabled' : ''}>${label}</option>`;
+      }).join('');
   } catch {
-    sel.innerHTML = '<option value="">Server unavailable — use Demo Mode</option>';
-    err.textContent = 'Could not reach the server. Use Demo Mode to test the game without scoring.';
+    sel.innerHTML = `<option value="">${t('login.server_unavailable')}</option>`;
+    err.textContent = t('login.server_error');
+    if (retryBtn) retryBtn.style.display = 'inline-block';
   }
 }
 
@@ -856,34 +1180,45 @@ function showStartScreen(groupName) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('startscreen').style.display  = 'flex';
   if (groupName) {
-    document.getElementById('group-greeting').textContent = `Logged in as: ${groupName}`;
+    document.getElementById('group-greeting').textContent = t('login.logged_in_as').replace('{name}', groupName);
   }
 }
 
 document.getElementById('login-btn').onclick = async () => {
-  const groupId = document.getElementById('group-select').value;
-  const pin     = document.getElementById('group-pin').value.trim();
-  const err     = document.getElementById('login-error');
+  const groupId   = document.getElementById('group-select').value;
+  const pin       = document.getElementById('group-pin').value.trim();
+  const groupSize = parseInt(document.getElementById('group-size-select').value, 10);
+  const err       = document.getElementById('login-error');
   err.textContent = '';
-  if (!groupId) { err.textContent = 'Please select your group.'; return; }
-  if (!pin)     { err.textContent = 'Please enter your PIN.'; return; }
-  const name = document.getElementById('member-name').value.trim() || 'Member';
+  if (!groupId)            { err.textContent = t('login.select_error');     return; }
+  if (!pin)                { err.textContent = t('login.pin_error');        return; }
+  if (![3,4,5].includes(groupSize)) { err.textContent = t('login.group_size_error'); return; }
+  const name = document.getElementById('member-name').value.trim();
+  if (!name) { err.textContent = t('login.name_error'); return; }
   try {
-    const res = await apiCall('/api/login', 'POST', { groupId, pin });
+    const res = await apiCall('/api/login', 'POST', { groupId, pin, groupSize });
     if (res.status === 'completed') {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('already-played-screen').classList.add('show');
       return;
     }
-    S.authToken  = res.token;
-    S.groupName  = res.groupName;
-    S.memberName = name;
+    S.authToken     = res.token;
+    S.groupName     = res.groupName;
+    S.memberName    = name;
+    S.requiredSize  = res.requiredSize || groupSize;
+    S.groupSize     = groupSize;
     // Connect socket immediately so lobby is live before BEGIN
     connectSocket();
     showStartScreen(res.groupName);
     document.getElementById('lobby-status').style.display = 'block';
   } catch (e) {
-    err.textContent = e.message || 'Login failed. Check your PIN and try again.';
+    if (e.code) {
+      let msg = t(e.code);
+      if (e.required !== undefined) msg = msg.replace('{required}', e.required);
+      err.textContent = (msg !== e.code) ? msg : (e.message || t('login.fail'));
+    } else {
+      err.textContent = e.message || t('login.fail');
+    }
   }
 };
 
@@ -902,15 +1237,24 @@ document.getElementById('demo-pw-btn').onclick = async () => {
   const pw  = document.getElementById('demo-pw-input').value;
   const err = document.getElementById('demo-pw-error');
   err.textContent = '';
+  let authed = false;
   try {
     await apiCall('/api/admin/login', 'POST', { password: pw });
+    authed = true;
+  } catch (e) {
+    // Server unreachable — validate password client-side so demo still works offline
+    if (e.name === 'AbortError' || e.message === 'Failed to fetch') {
+      authed = (pw === 'QWAdmin2024');
+    }
+  }
+  if (authed) {
     S.demoMode   = true;
     S.groupName  = 'Demo';
     S.memberName = 'Admin Demo';
-    showStartScreen('Demo Mode (Admin)');
-    document.getElementById('start-btn').textContent = 'BEGIN AUDIT SIMULATION';
-  } catch {
-    err.textContent = 'Incorrect admin password.';
+    showStartScreen(t('login.demo_mode_label'));
+    document.getElementById('start-btn').textContent = t('login.demo_start_btn');
+  } else {
+    err.textContent = t('login.admin_pw_wrong');
   }
 };
 
@@ -957,7 +1301,7 @@ document.getElementById('demo-pw-input').onkeydown = e => {
         const finished = g.completedAt
           ? new Date(g.completedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
           : '—';
-        const pips = Array.from({length:8}, (_,j) => `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;margin:1px;background:${j < (g.puzzlesDone||0) ? 'var(--accent2)' : 'var(--border)'};"></span>`).join('');
+        const pips = Array.from({length:11}, (_,j) => `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;margin:1px;background:${j < (g.puzzlesDone||0) ? 'var(--accent2)' : 'var(--border)'};"></span>`).join('');
         const tr = document.createElement('tr');
         tr.innerHTML = `<td class="lb-rank">${rank}</td><td class="lb-group">${g.name}</td><td class="lb-score">${g.score ?? '—'}</td><td>${pips}</td><td style="color:var(--dim)">${timeLeft}</td><td style="color:var(--danger)">${g.wrongAnswers ?? 0}</td><td style="color:var(--dim);font-size:0.75rem;">${finished}</td>`;
         tbody.appendChild(tr);
@@ -981,7 +1325,7 @@ document.getElementById('demo-pw-input').onkeydown = e => {
       lbAdminToken = res.token;
       await fetchAndShowLeaderboard(lbAdminToken);
     } catch {
-      err.textContent = 'Incorrect password.';
+      err.textContent = t('lb.wrong_pw');
     }
   };
   document.getElementById('lb-pw-input').onkeydown = e => {
@@ -1032,6 +1376,37 @@ const ITEMS = {
 };
 
 // ────────────────────────────────────────────────
+// HINTS  (one per room — subtle, no answers)
+// ────────────────────────────────────────────────
+const ROOM_HINTS = {
+  receiving:  'The AQL chart and the CoA you receive both describe the same material — compare their numbers before making a decision.',
+  production: 'The maintenance log records what was scheduled and what actually happened. A single line difference tells the whole story.',
+  qclab:      'The micrometer reads a current value. The calibration reference gives a target. The gap between them is what matters.',
+  qaoffice:   'The NCR and the CAPA are linked documents — one names the problem, the other names the solution. Trace the chain.',
+  dispatch:   'The Quality Week motto appears on every wall for a reason. Think about which ISO 9001:2015 principle drives improvement at every step.',
+};
+
+function useHint() {
+  const room = S.room;
+  if (S.hintsUsed[room]) {
+    log(t('msg.hint_already'), 'warn');
+    return;
+  }
+  if (S.over) return;
+  const hint = ROOM_HINTS[room];
+  if (!hint) return;
+  S.hintsUsed[room] = true;
+  const timeCost = 60;
+  const ptsCost  = 50;
+  S.timerSec = Math.max(0, S.timerSec - timeCost);
+  S.hintPenalty += ptsCost;
+  if (S.socket) S.socket.emit('hint_used', { room, timeCost, ptsCost });
+  const tHint = t('hint.' + room);
+  log(`💡 HINT — ${t('room.' + room) || ROOMS[room].name}: ${tHint !== 'hint.' + room ? tHint : hint}`, 'hint');
+  log(t('hint.penalty_log').replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+}
+
+// ────────────────────────────────────────────────
 // ROOMS
 // ────────────────────────────────────────────────
 const ROOMS = {
@@ -1039,31 +1414,41 @@ const ROOMS = {
     id: 'receiving', badge: 'AREA 01 — RECEIVING DOCK',
     name: 'Receiving Dock',
     emoji: '📦',
-    desc: 'Raw materials arrive here for incoming quality control. Under GMP, every incoming batch must have a Certificate of Analysis (CoA) reviewed and verified before the material can be released to production. A red HOLD light flashes above the pallet of rubber compound. The GMP terminal on the wall reads: "MATERIAL ON HOLD — VERIFICATION REQUIRED."',
+    desc: 'Raw materials arrive here for incoming quality control. Under GMP, every incoming batch must have a Certificate of Analysis (CoA) reviewed and verified before the material can be released to production. A red HOLD light flashes above the pallet of rubber compound. The GMP terminal on the wall reads: "MATERIAL ON HOLD — VERIFICATION REQUIRED." A Quality Week banner on the wall displays the site motto: "Progress in every step · Quality in every detail."',
     hotspots: [
       { label: 'Inspect Pallet (Rubber Compound)', action: 'inspect_pallet'    },
       { label: 'Check Clipboard',                  action: 'check_clipboard'   },
       { label: 'GMP Receiving Terminal',            action: 'gmp_terminal'     },
       { label: 'Quality Week Noticeboard',          action: 'read_noticeboard' },
     ],
+    hiddenSpots: [
+      { emoji: '🥚', action: 'find_hq_receiving_1', trigger: 'desc-append'    },
+      { emoji: '🌬️', action: 'find_hq_receiving_2', trigger: 'badge'          },
+    ],
   },
   production: {
     id: 'production', badge: 'AREA 02 — PRODUCTION LINE',
     name: 'Production Line — Plunger Assembly',
     emoji: '🏭',
-    desc: 'The main moulding and assembly line for rubber plungers used in insulin vials and prefilled syringes. The line is halted at Station 3 — an amber light pulses above it. A visual inspection light-box station is set up as part of Quality Week. The AQL sampling chart is pinned beside it. The door to the QC Laboratory has a sign: "ENTRY REQUIRES NCR FILING."',
+    desc: 'The main moulding and assembly line for rubber plungers used in insulin vials and prefilled syringes. The line is halted at Station 3 — an amber light pulses above it. A visual inspection light-box station is set up as part of Quality Week. The AQL sampling chart is pinned beside it. The door to the QC Laboratory has a sign: "ENTRY REQUIRES NCR FILING." Above the line, a permanent poster reads: "Progress in every step · Quality in every detail — Quality is everyone\'s responsibility."',
     hotspots: [
-      { label: 'AQL Sampling Chart (Wall)',  action: 'read_aql_chart'    },
-      { label: 'Visual Inspection Light Box', action: 'use_lightbox'    },
-      { label: 'Examine Station 3 Mould',    action: 'examine_mould'   },
-      { label: 'NCR Filing Station',         action: 'file_ncr'        },
+      { label: 'AQL Sampling Chart (Wall)',       action: 'read_aql_chart'      },
+      { label: 'Visual Inspection Light Box',     action: 'use_lightbox'        },
+      { label: 'Examine Station 3 Mould',         action: 'examine_mould'       },
+      { label: 'Station 3 Instrument Log',        action: 'check_station3_log'  },
+      { label: 'NCR Filing Station',              action: 'file_ncr'            },
+      { label: 'Quality Improvement Poster',      action: 'read_quality_poster' },
+    ],
+    hiddenSpots: [
+      { emoji: '💧', action: 'find_hq_production_1', trigger: 'room-emoji'     },
+      { emoji: '📊', action: 'find_hq_production_2', trigger: 'progress-prefix'},
     ],
   },
   qclab: {
     id: 'qclab', badge: 'AREA 03 — QC LABORATORY',
     name: 'Quality Control Laboratory',
     emoji: '🔬',
-    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY."',
+    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY." The ISO 15378 packaging compliance file sits on the far bench. Above the bench, the site motto is printed in bold: "Progress in every step · Quality in every detail."',
     hotspots: [
       { label: 'Calibration Reference Cabinet',      action: 'open_cal_cabinet'    },
       { label: 'Micrometer Station',                 action: 'use_micrometer'      },
@@ -1071,29 +1456,42 @@ const ROOMS = {
       { label: 'Equipment Logbook',                  action: 'check_equip_log'     },
       { label: 'ISO 15378 Packaging Compliance File', action: 'check_iso15378'     },
     ],
+    hiddenSpots: [
+      { emoji: '🌳', action: 'find_hq_qclab_1',    trigger: 'room-title'      },
+      { emoji: '💻', action: 'find_hq_qclab_2',    trigger: 'desc-append'     },
+    ],
   },
   qaoffice: {
     id: 'qaoffice', badge: 'AREA 04 — QA / COMPLIANCE',
     name: 'QA & Compliance Office',
     emoji: '🗂️',
-    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." A maintenance log has been left open on the side table — someone was in a hurry. An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 verification to unlock.',
+    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." A maintenance log has been left open on the side table — someone was in a hurry. An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 + ISO 15378 verification to unlock. A framed quality pledge on the wall reads: "Progress in every step · Quality in every detail — We own our processes."',
     hotspots: [
-      { label: 'Maintenance Log (Side Table)', action: 'read_maint_log'    },
-      { label: 'CAPA Workstation',             action: 'use_capa_station'  },
-      { label: 'ISO 13485 Filing Cabinet',     action: 'check_iso_files'   },
-      { label: 'ISO 9001 Management Review',   action: 'check_iso9001'     },
-      { label: 'Batch Record Safe',            action: 'open_batch_safe'   },
+      { label: 'Maintenance Log (Side Table)', action: 'read_maint_log'       },
+      { label: 'CAPA Workstation',             action: 'use_capa_station'     },
+      { label: 'ISO 13485 Filing Cabinet',     action: 'check_iso_files'      },
+      { label: 'ISO 9001 Management Review',   action: 'check_iso9001'        },
+      { label: 'Batch Record Safe',            action: 'open_batch_safe'      },
+      { label: 'Quality Pledge (Wall Frame)',  action: 'read_quality_pledge'  },
+    ],
+    hiddenSpots: [
+      { emoji: '📅', action: 'find_hq_qaoffice_1', trigger: 'hotspot-suffix'  },
+      { emoji: '🔒', action: 'find_hq_qaoffice_2', trigger: 'desc-append'     },
     ],
   },
   dispatch: {
     id: 'dispatch', badge: 'AREA 05 — DISPATCH / RELEASE',
     name: 'Dispatch & Release Bay',
     emoji: '🚚',
-    desc: 'The final checkpoint before product leaves the facility. A quarantine cage holds batch BN-2024-3200 — padlocked pending QA sign-off. The batch release terminal glows amber. Under ISO 13485 §8.3, no nonconforming product may leave the site without documented disposition. A Quality Week banner reads: "ZERO DEFECTS SAVES LIVES."',
+    desc: 'The final checkpoint before product leaves the facility. A quarantine cage holds batch BN-2024-3200 — padlocked pending QA sign-off. The batch release terminal glows amber. Under ISO 13485 §8.3, no nonconforming product may leave the site without documented disposition. A Quality Week banner reads: "ZERO DEFECTS SAVES LIVES — Progress in every step · Quality in every detail."',
     hotspots: [
       { label: 'Batch Release Terminal', action: 'use_release_terminal' },
       { label: 'Quarantine Cage',        action: 'inspect_quarantine'   },
       { label: 'Quality Week Banner',    action: 'read_qw_banner'       },
+    ],
+    hiddenSpots: [
+      { emoji: '🍯', action: 'find_hq_dispatch_1', trigger: 'desc-append'     },
+      { emoji: '🎲', action: 'find_hq_dispatch_2', trigger: 'art-corner'      },
     ],
   },
 };
@@ -1114,21 +1512,51 @@ const EXITS = {
 function canEnter(roomId) {
   if (roomId === 'production') return !!S.solved.coa_verified;
   if (roomId === 'qclab')      return !!S.solved.ncr_filed;
-  if (roomId === 'qaoffice')   return !!S.solved.calibration_done && !!S.solved.iso15378_done;
+  if (roomId === 'qaoffice')   return !!S.solved.calibration_done;
   if (roomId === 'dispatch')   return !!S.solved.capa_done;
   return true;
 }
 
 function lockReason(roomId) {
-  if (roomId === 'production') return 'Raw material verification required first (GMP Receiving Terminal).';
-  if (roomId === 'qclab')      return 'File the NCR at the NCR Filing Station on the production line first.';
-  if (roomId === 'qaoffice')   return 'Complete instrument calibration AND the ISO 15378 packaging compliance check in the QC Lab first.';
-  if (roomId === 'dispatch')   return 'Complete and authorise the CAPA report in the QA Office first.';
-  return 'Blocked.';
+  const key = `nav.lock.${roomId}`;
+  const tx = t(key);
+  return tx !== key ? tx : t('nav.blocked');
+}
+
+// Puzzles that must be solved before leaving each room
+const ROOM_PUZZLES = {
+  receiving:  ['coa_verified'],
+  production: ['inspection_done', 'ncr_filed', 'motto_production'],
+  qclab:      ['calibration_done', 'iso15378_done'],
+  qaoffice:   ['capa_done', 'iso9001_done', 'motto_qaoffice', 'batch_retrieved'],
+  dispatch:   ['motto_challenge'],
+};
+
+function getMissingInRoom(roomId) {
+  // Group-level: only S.solved (all locked players done) gates room departure.
+  // S.mySolved is used only for per-player hotspot state, not for navigation.
+  return (ROOM_PUZZLES[roomId] || []).filter(k => !S.solved[k]);
 }
 
 function goTo(roomId) {
   if (!canEnter(roomId)) { log(lockReason(roomId), 'fail'); return; }
+  // Only enforce room completion when moving FORWARD (backward navigation is always allowed)
+  const currentIdx = ROOM_ORDER.indexOf(S.room);
+  const targetIdx  = ROOM_ORDER.indexOf(roomId);
+  if (targetIdx > currentIdx) {
+    const missing = getMissingInRoom(S.room);
+    if (missing.length > 0) {
+      // Differentiate: show alarm only for puzzles I haven't personally done yet.
+      // If I've done them all but teammates haven't, show a waiting message instead.
+      const myMissing = missing.filter(k => !S.mySolved[k]);
+      if (myMissing.length > 0) {
+        showAlarm(myMissing, 'depart');
+      } else {
+        log(t('msg.waiting_for_team'), 'warn');
+      }
+      return;
+    }
+  }
   S.room = roomId;
   renderRoom(); renderNav();
 }
@@ -1169,53 +1597,55 @@ function handleAction(action) {
     case 'inspect_pallet':
       if (!S.found.pallet) {
         S.found.pallet = true;
-        return { msg: 'Pallet label: Rubber Compound RC-500 | Batch RM-4471 | Kautschuk GmbH. The HOLD sticker is applied — awaiting CoA review per GMP incoming goods procedure.', cls: 'info' };
+        return { msg: t('msg.pallet_hold'), cls: 'info' };
       }
-      return { msg: 'Pallet still on HOLD. Verify the CoA at the GMP terminal.', cls: 'warn' };
+      return { msg: t('msg.pallet_still_hold'), cls: 'warn' };
 
     case 'check_clipboard':
       if (!S.found.coa) {
         S.found.coa = true;
         addItem('coa');
-        addNote('CoA found — Lot <strong>RM-4471</strong>, supplier Kautschuk GmbH. Must be entered into GMP terminal to release material.', true);
-        return { msg: 'Certificate of Analysis found on the clipboard. Added to inventory.', cls: 'success' };
+        addNote(t('note.coa_found'), true);
+        return { msg: t('msg.coa_found'), cls: 'success' };
       }
-      return { msg: 'You already have the CoA.', cls: 'info' };
+      return { msg: t('msg.coa_already'), cls: 'info' };
 
     case 'gmp_terminal':
       if (S.solved.coa_verified) {
-        return { msg: 'GMP Terminal: Material RM-4471 VERIFIED ✓. Production line access granted.', cls: 'success' };
+        return { msg: t('msg.gmp_verified'), cls: 'success' };
       }
       if (!S.inventory.includes('coa')) {
-        return { msg: 'The GMP terminal requires a Certificate of Analysis. Find it first.', cls: 'warn' };
+        return { msg: t('msg.gmp_needs_coa'), cls: 'warn' };
       }
       openModal({
-        tag: 'GMP — INCOMING MATERIAL VERIFICATION',
-        title: 'GMP Receiving Terminal',
-        body: 'Under Good Manufacturing Practice (GMP), all incoming raw materials must be verified against their Certificate of Analysis before use in production.<br><br>The terminal is requesting the <strong>material lot number</strong> from the CoA. Enter it below to release the material from HOLD:',
-        placeholder: 'e.g. RM-XXXX',
-        submitLabel: 'Verify & Release',
+        tag: t('tag.gmp'),
+        title: t('title.gmp'),
+        body: t('body.gmp'),
+        questionKey: 'q.gmp',
+        placeholder: t('q.gmp.ph'),
+        submitLabel: t('btn.verify_release'),
         onSubmit: val => {
           const v = val.trim().toUpperCase().replace(/\s/g,'');
           if (v === 'RM4471' || v === 'RM-4471' || v === '4471') {
             if (S.demoMode || !S.socket) {
               // Demo / no socket — solve immediately
-              S.solved.coa_verified = true;
+              S.solved.coa_verified  = true;
+              S.mySolved.coa_verified = true;
               puzzleDone();
               closeModal();
-              log('✓ MATERIAL VERIFIED — Lot RM-4471 released from HOLD. Production line is now accessible.', 'success');
-              log('📚 Quality Fact: GMP requires every incoming material to have an approved CoA on file before it can be used in production.', 'fact');
+              log(t('msg.gmp_verified_log'), 'success');
+              log(t('msg.gmp_fact'), 'fact');
               renderNav();
             } else {
-              // Collaborative — notify team, wait for all to confirm
-              setFeedback('✓ Correct lot number! Notifying team — waiting for all members to confirm…', 'ok');
-              document.getElementById('modal-submit').disabled = true;
-              S.socket.emit('code_found', { puzzleKey: 'coa_verified', code: 'RM-4471', label: 'GMP Material Verification (Lot RM-4471)' });
+              // Per-player: each player submits independently
+              setFeedback(t('fb.gmp_ok'), 'ok');
+              window._currentPuzzleKey = 'coa_verified';
+              myPuzzleComplete('coa_verified');
             }
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Lot number not recognised. Check the Certificate of Analysis.', 'bad');
+            setFeedback(t('fb.gmp_bad'), 'bad');
           }
         },
       });
@@ -1223,9 +1653,9 @@ function handleAction(action) {
 
     case 'read_noticeboard':
       openModal({
-        tag: 'QUALITY WEEK',
-        title: 'Quality Week Noticeboard',
-        body: '<strong>QUALITY WEEK — MediSeal Manufacturing</strong><br><br>This week we celebrate our commitment to excellence. Every rubber plunger we manufacture ends up in an insulin vial or a diabetic injection device — used by real patients every single day.<br><br><strong>Key reminders:</strong><br>• Follow your SOP — every time, without exception<br>• Any deviation must have a raised deviation record<br>• AQL is not optional: it protects patients and our licence to operate<br>• If you\'re unsure, ASK before acting<br><br><em>"Quality is not an act, it is a habit." — Aristotle</em>',
+        tag: t('tag.noticeboard'),
+        title: t('title.noticeboard'),
+        body: t('body.noticeboard'),
         noInput: true,
       });
       return null;
@@ -1235,51 +1665,56 @@ function handleAction(action) {
       if (!S.found.aql_table) {
         S.found.aql_table = true;
         addItem('aql_table');
-        addNote('AQL Chart: Lot 3,200 | Level II | AQL 1.0 → Sample size <strong>125</strong> | Ac=3, Re=4', true);
-        log('📚 Quality Fact: AQL (Acceptable Quality Level) per ISO 2859-1 defines the worst acceptable defect rate. Ac = accept if ≤ this many defects; Re = reject if ≥ this many.', 'fact');
-        return { msg: 'AQL Sampling Chart added to inventory and key figures noted.', cls: 'success' };
+        addNote(t('note.aql_chart'), true);
+        log(t('msg.aql_fact'), 'fact');
+        return { msg: t('msg.aql_chart_found'), cls: 'success' };
       }
-      return { msg: 'You already have the AQL chart details noted.', cls: 'info' };
+      return { msg: t('msg.aql_chart_already'), cls: 'info' };
 
     case 'use_lightbox':
       if (!S.found.aql_table) {
-        return { msg: 'The inspection station is ready but you should check the AQL chart on the wall first to know your sample size and acceptance criteria.', cls: 'warn' };
+        return { msg: t('msg.inspect_check_aql'), cls: 'warn' };
       }
       if (S.solved.inspection_done) {
-        return { msg: 'Inspection complete. NCR-0892 raised. 4 defects found — batch rejected.', cls: 'info' };
+        return { msg: t('msg.inspection_done'), cls: 'info' };
+      }
+      if (S.mySolved.inspection_done) {
+        return { msg: t('msg.your_task_done'), cls: 'info' };
       }
       openModal({
-        tag: 'VISUAL INSPECTION — AQL SAMPLING',
-        title: 'Inspection Light Box — Sample from Batch BN-2024-3200',
-        body: 'You have pulled a sample of <strong>125 plungers</strong> per your AQL chart (ISO 2859-1, Level II, AQL 1.0).<br><br>Using the light box and magnification stand, you inspect each plunger for: flash on sealing lip, dimensional deviation, surface contamination, and incomplete fill.<br>' + buildInspectionGrid() + 'How many <strong>defective plungers</strong> did you find in the tray above?',
-        placeholder: 'Enter defect count (number only)',
-        submitLabel: 'Record Count',
+        tag: t('tag.inspection'),
+        title: t('title.inspection'),
+        body: t('body.inspection_pre') + buildInspectionGrid() + t('body.inspection_post'),
+        questionKey: 'q.inspection',
+        placeholder: t('ph.inspection'),
+        submitLabel: t('btn.record_count'),
+        puzzleKey: 'inspection_done',
         onSubmit: val => {
           const n = parseInt(val.trim(), 10);
           if (n === 4) {
-            setFeedback('✓ Correct — 4 defects found.', 'ok');
+            setFeedback(t('fb.inspection_ok'), 'ok');
             setTimeout(() => {
               openModal({
-                tag: 'AQL BATCH DECISION',
-                title: 'AQL Disposition — Step 2 of 2',
-                body: 'You found <strong>4 defects</strong> in your sample of 125.<br><br>According to your AQL chart for this batch:<br><br><div style="background:#0a0c18;padding:10px 14px;border-radius:4px;font-size:0.8rem;border:1px solid #1e2236;margin:10px 0;">Sample size: 125 &nbsp;|&nbsp; AQL 1.0<br>Accept (Ac): ≤ <strong>3</strong> defects<br>Reject (Re): ≥ <strong>4</strong> defects<br><br>Defects found: <strong style="color:#e63946">4</strong></div>What is your batch disposition? Type <strong>ACCEPT</strong> or <strong>REJECT</strong>:',
+                tag: t('tag.aql_result'),
+                title: t('title.aql_result'),
+                body: t('body.aql_result'),
+                questionKey: 'q.aql',
                 placeholder: 'ACCEPT or REJECT',
-                submitLabel: 'Record Disposition',
+                submitLabel: t('btn.record_disposition'),
+                puzzleKey: 'inspection_done',
                 onSubmit: val2 => {
                   if (val2.trim().toUpperCase() === 'REJECT') {
-                    S.solved.inspection_done = true;
-                    puzzleDone();
-                    if (S.socket) S.socket.emit('puzzle_solved', { key: 'inspection_done', puzzlesDone: S.puzzlesDone });
-                    closeModal();
-                    log('✓ Batch BN-2024-3200 REJECTED — 4 defects equals the rejection number (Re=4). An NCR must now be raised.', 'success');
-                    log('📚 Quality Fact: A "Re" value means if you find EXACTLY that many defects, you still REJECT — the accept number is strictly less than Re.', 'fact');
-                    renderRoom();
+                    myPuzzleComplete('inspection_done', () => {
+                      log(t('msg.aql_result_log'), 'success');
+                      log(t('msg.aql_result_fact'), 'fact');
+                      renderRoom();
+                    });
                   } else if (val2.trim().toUpperCase() === 'ACCEPT') {
                     S.wrongAnswers++;
                     if (S.socket) S.socket.emit('wrong_answer');
-                    setFeedback('Incorrect. With 4 defects and Re=4, the batch must be REJECTED. Re means reject if ≥ 4 defects — 4 equals 4.', 'bad');
+                    setFeedback(t('fb.inspection_reject_bad'), 'bad');
                   } else {
-                    setFeedback('Type exactly ACCEPT or REJECT.', 'bad');
+                    setFeedback(t('fb.inspection_type_bad'), 'bad');
                   }
                 },
               });
@@ -1287,9 +1722,9 @@ function handleAction(action) {
           } else if (!isNaN(n)) {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback(`You counted ${n}, but that doesn't match the inspection record. Look at the tray more carefully.`, 'bad');
+            setFeedback(t('fb.inspection_count_bad').replace('{n}', n), 'bad');
           } else {
-            setFeedback('Please enter a number.', 'bad');
+            setFeedback(t('fb.inspection_nan'), 'bad');
           }
         },
       });
@@ -1298,39 +1733,50 @@ function handleAction(action) {
     case 'examine_mould':
       if (!S.found.mould) {
         S.found.mould = true;
-        return { msg: 'Station 3 mould tooling: A fresh sheen of lubricant on the mould surfaces — but the colour is slightly off. A used canister in the bin reads "Grade B-7 Synthetic". The SOP by the station calls for "Grade A-3 food-grade silicone lubricant." This could be significant.', cls: 'warn' };
+        return { msg: t('msg.mould_lubricant'), cls: 'warn' };
       }
-      return { msg: 'The wrong lubricant is clearly visible on the mould. This needs a proper root cause investigation in the QA office.', cls: 'warn' };
+      return { msg: t('msg.mould_already'), cls: 'warn' };
+
+    case 'check_station3_log':
+      if (!S.found.station3_log) {
+        S.found.station3_log = true;
+        addNote(t('note.station3_log'), true);
+        return { msg: t('msg.station3_log'), cls: 'warn' };
+      }
+      return { msg: t('msg.station3_log_done'), cls: 'info' };
 
     case 'file_ncr':
       if (!S.solved.inspection_done) {
-        return { msg: 'You cannot raise an NCR until the AQL inspection is complete and a rejection decision has been made.', cls: 'warn' };
+        return { msg: t('msg.ncr_needs_inspect'), cls: 'warn' };
       }
       if (S.solved.ncr_filed) {
-        return { msg: 'NCR-0892 is already raised. The QC Lab is now accessible.', cls: 'info' };
+        return { msg: t('msg.ncr_already'), cls: 'info' };
+      }
+      if (S.mySolved.ncr_filed) {
+        return { msg: t('msg.your_task_done'), cls: 'info' };
       }
       openModal({
-        tag: 'NON-CONFORMANCE REPORT (NCR)',
-        title: 'NCR Filing Station',
-        body: 'Under ISO 13485, any product failing to meet specified requirements must have a Non-Conformance Report raised immediately. This creates the quality record and triggers the CAPA process.<br><br>Enter the <strong>batch number</strong> this NCR applies to:',
+        tag: t('tag.ncr'),
+        title: t('title.ncr'),
+        body: t('body.ncr'),
+        questionKey: 'q.ncr',
         placeholder: 'e.g. BN-2024-XXXX',
-        submitLabel: 'Raise NCR',
+        submitLabel: t('btn.raise_ncr'),
+        puzzleKey: 'ncr_filed',
         onSubmit: val => {
           const v = val.trim().toUpperCase().replace(/\s/g,'');
           if (v === 'BN-2024-3200' || v === 'BN20243200' || v === '3200') {
-            S.solved.ncr_filed = true;
             S.found.ncr_form = true;
             addItem('ncr_form');
-            puzzleDone();
-            if (S.socket) S.socket.emit('puzzle_solved', { key: 'ncr_filed', puzzlesDone: S.puzzlesDone });
-            closeModal();
-            log('✓ NCR-0892 raised for batch BN-2024-3200. QC Laboratory access granted.', 'success');
-            log('📚 Quality Fact: ISO 13485 §8.3 requires documented procedures for controlling nonconforming product. An NCR creates the traceable quality record.', 'fact');
-            renderNav();
+            myPuzzleComplete('ncr_filed', () => {
+              log(t('msg.ncr_raised_log'), 'success');
+              log(t('msg.ncr_fact'), 'fact');
+              renderNav();
+            });
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Batch number not found. Check your notes — the batch number was stated in the scenario briefing.', 'bad');
+            setFeedback(t('fb.ncr_bad'), 'bad');
           }
         },
       });
@@ -1341,39 +1787,42 @@ function handleAction(action) {
       if (!S.found.cal_ref) {
         S.found.cal_ref = true;
         addItem('cal_ref');
-        addNote('Calibration Reference: Certified Gauge Block = <strong>12.50 mm</strong> (±0.001 mm). Use to verify micrometer SN-7734.', true);
-        return { msg: 'Calibration cabinet opened. Inside: a certified gauge block reference standard — 12.50 mm, traceable per ISO/IEC 17025. Added to inventory.', cls: 'success' };
+        addNote(t('note.cal_ref'), true);
+        return { msg: t('msg.cal_cabinet_opened'), cls: 'success' };
       }
-      return { msg: 'You already have the calibration reference noted.', cls: 'info' };
+      return { msg: t('msg.cal_already'), cls: 'info' };
 
     case 'use_micrometer':
       if (S.solved.calibration_done) {
-        return { msg: 'Micrometer SN-7734 is now calibrated and its correction factor is recorded. QA Office access granted.', cls: 'success' };
+        return { msg: t('msg.cal_done'), cls: 'success' };
+      }
+      if (S.mySolved.calibration_done) {
+        return { msg: t('msg.your_task_done'), cls: 'info' };
       }
       if (!S.inventory.includes('cal_ref')) {
-        return { msg: 'The micrometer carries an OUT OF CALIBRATION sticker. You need the certified reference standard from the calibration cabinet before you can proceed.', cls: 'warn' };
+        return { msg: t('msg.cal_needs_ref'), cls: 'warn' };
       }
       openModal({
-        tag: 'INSTRUMENT CALIBRATION',
-        title: 'Micrometer Station — SN-7734',
-        body: 'Calibration is essential for measurement accuracy in a medical device facility. An uncalibrated instrument can pass defective product or reject conforming product — both are costly.<br><br>You place the <strong>certified 12.50 mm gauge block</strong> in the micrometer. The display reads: <strong style="color:#f5a623;">12.53 mm</strong><br><br>Calculate and enter the <strong>correction factor</strong> (certified value − instrument reading).<br><small style="color:#5a6480;">Include the sign: e.g. +0.05 or -0.03</small>',
-        placeholder: 'e.g. -0.03',
-        submitLabel: 'Apply Correction',
+        tag: t('tag.calibration'),
+        title: t('title.calibration'),
+        body: t('body.calibration'),
+        questionKey: 'q.calibration',
+        placeholder: t('ph.calibration'),
+        submitLabel: t('btn.apply_correction'),
+        puzzleKey: 'calibration_done',
         onSubmit: val => {
           const v = val.trim().replace(/\s/g, '');
           // Accept -0.03, 0.03, -.03, -0.030 etc.
           if (v === '-0.03' || v === '0.03' || v === '-0.030' || v === '-.03') {
-            S.solved.calibration_done = true;
-            puzzleDone();
-            if (S.socket) S.socket.emit('puzzle_solved', { key: 'calibration_done', puzzlesDone: S.puzzlesDone });
-            closeModal();
-            log('✓ Correction factor −0.03 mm applied and logged. Calibration certificate recorded. QA Office access granted.', 'success');
-            log('📚 Quality Fact: ISO/IEC 17025 requires all measurement instruments in QC labs to be calibrated against traceable reference standards at defined intervals.', 'fact');
-            renderNav();
+            myPuzzleComplete('calibration_done', () => {
+              log(t('msg.cal_log'), 'success');
+              log(t('msg.cal_fact'), 'fact');
+              renderNav();
+            });
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Incorrect. Correction = standard − reading = 12.50 − 12.53 = ?', 'bad');
+            setFeedback(t('fb.cal_bad'), 'bad');
           }
         },
       });
@@ -1382,74 +1831,83 @@ function handleAction(action) {
     case 'check_sop_rack':
       if (!S.found.sop_checked) {
         S.found.sop_checked = true;
-        addNote('SOP rack: SOP-QC-015 (Visual Inspection), SOP-QC-022 (AQL Sampling), SOP-MAINT-009 (Mould Lubricant — Grade A-3 ONLY)');
-        return { msg: 'SOP Document Rack: You find SOP-MAINT-009 "Mould Tooling Maintenance." Section 4.2 clearly states: "Use Grade A-3 food-grade silicone lubricant only. Using unapproved alternatives will contaminate product and void GMP compliance." This matches what you saw at Station 3.', cls: 'warn' };
+        addNote(t('note.sop_rack'));
+        return { msg: t('msg.sop_rack'), cls: 'warn' };
       }
-      return { msg: 'SOPs noted. The mould lubricant SOP (MAINT-009) is the critical one here.', cls: 'info' };
+      return { msg: t('msg.sop_already'), cls: 'info' };
 
     case 'check_equip_log':
       if (!S.found.equip_log) {
         S.found.equip_log = true;
-        return { msg: 'Equipment Logbook for Micrometer SN-7734: Last calibration 180 days ago. Calibration interval: 90 days. Status: OVERDUE. This explains the dimensional issues found during inspection.', cls: 'warn' };
+        addNote(t('note.equip_log'), true);
+        return { msg: t('msg.equip_log'), cls: 'warn' };
       }
-      return { msg: 'Micrometer SN-7734 was 90 days overdue for calibration.', cls: 'info' };
+      return { msg: t('msg.equip_log_done'), cls: 'info' };
 
     // ── QA OFFICE ──────────────────────────────────────────
     case 'read_maint_log':
       if (!S.found.maint_log) {
         S.found.maint_log = true;
         addItem('maint_log');
-        addNote('Maintenance Log — Station 3: Lubricant changed to <strong>Grade B-7</strong> (wrong). Correct grade: <strong>Grade A-3</strong>. No deviation raised!', true);
-        return { msg: 'Maintenance Log found. Station 3 maintenance entry: lubricant changed to Grade B-7 instead of Grade A-3 per SOP-MAINT-009. No deviation form was raised. This is a critical GMP compliance failure. Added to inventory.', cls: 'warn' };
+        addNote(t('note.maint_log'), true);
+        return { msg: t('msg.maint_log_found'), cls: 'warn' };
       }
-      return { msg: 'You\'ve already reviewed the maintenance log. Key finding: wrong lubricant grade used.', cls: 'info' };
+      return { msg: t('msg.maint_log_already'), cls: 'info' };
 
     case 'use_capa_station':
       if (S.solved.capa_done) {
-        return { msg: 'CAPA-0112 is complete. Batch record safe is now unlocked.', cls: 'success' };
+        return { msg: t('msg.capa_done'), cls: 'success' };
+      }
+      if (S.mySolved.capa_done) {
+        return { msg: t('msg.your_task_done'), cls: 'info' };
       }
       if (!S.inventory.includes('maint_log')) {
-        return { msg: 'CAPA workstation is open but you need evidence of the root cause before you can complete the analysis. Check the maintenance log on the side table.', cls: 'warn' };
+        return { msg: t('msg.capa_needs_maint'), cls: 'warn' };
       }
       // Step 1 — Root cause multiple choice
       openModal({
-        tag: 'CAPA — CORRECTIVE & PREVENTIVE ACTION',
-        title: 'CAPA Workstation — NCR-0892 Root Cause Analysis',
-        body: 'A Corrective Action and Preventive Action (CAPA) must identify the <strong>true root cause</strong> of a non-conformance — not just the symptom — so that it can be permanently eliminated.<br><br>Based on your investigation findings, select the <strong>root cause</strong> of the dimensional non-conformances in batch BN-2024-3200:',
-        choices: [
+        tag: t('tag.capa_root'),
+        title: t('title.capa_root'),
+        body: t('body.capa_root'),
+        questionKey: 'q.capa_root',
+        puzzleKey: 'capa_done',
+        choices: tChoices('capa_root', [
           { label: 'A)  Operator fatigue during the night shift', correct: false },
           { label: 'B)  Wrong lubricant grade used on mould tooling (Grade B-7 instead of Grade A-3)', correct: true },
           { label: 'C)  Incoming rubber compound out of specification', correct: false },
           { label: 'D)  Autoclave temperature excursion during sterilisation', correct: false },
-        ],
+        ]),
         onChoice: (correct, label) => {
           if (correct) {
-            setFeedback('✓ Correct root cause identified.', 'ok');
+            setFeedback(t('fb.capa_root_ok'), 'ok');
             setTimeout(() => {
-              // Step 2 — ISO 13485 clause
+              // Step 2 — Preventive action reasoning (NO clause number question)
               openModal({
-                tag: 'CAPA — ISO 13485 COMPLIANCE CHECK',
-                title: 'CAPA Step 2 of 2 — ISO 13485 Reference',
-                body: 'Root cause confirmed: <strong>Wrong lubricant grade on mould tooling.</strong><br><br>Under <strong>ISO 13485</strong> — the international Quality Management System standard for medical device manufacturers — all organisations must establish and maintain documented procedures for CAPA.<br><br>Enter the <strong>ISO 13485 clause number</strong> that mandates CAPA procedures:<br><small style="color:#5a6480;">(Hint: it\'s in the section covering "Improvement" — check the ISO 13485 filing cabinet if needed)</small>',
-                placeholder: 'e.g. 7.1 or 8.5',
-                submitLabel: 'Submit Clause',
-                onSubmit: val => {
-                  const v = val.trim().replace(/\s/g, '');
-                  if (v === '8.5' || v === '8.5.2' || v === '8.5.3' || v === '85') {
-                    S.solved.capa_done = true;
+                tag: t('tag.capa_prev'),
+                title: t('title.capa_prev'),
+                body: t('body.capa_prev'),
+                questionKey: 'q.capa_prev',
+                puzzleKey: 'capa_done',
+                choices: tChoices('capa_prev', [
+                  { label: 'A)  Order Grade B-7 lubricant as an official approved alternative to reduce risk of error', correct: false },
+                  { label: 'B)  Update SOP-MAINT-009 with lubricant grade verification step AND retrain all maintenance staff on the SOP', correct: true },
+                  { label: 'C)  Increase the AQL sample size for future batches to catch any future lubricant-related defects earlier', correct: false },
+                  { label: 'D)  Attach a warning label to the lubricant storage cupboard and rely on operator awareness', correct: false },
+                ]),
+                onChoice: (correct2) => {
+                  if (correct2) {
                     S.found.capa_report = true;
                     addItem('capa_report');
-                    puzzleDone();
-                    if (S.socket) S.socket.emit('puzzle_solved', { key: 'capa_done', puzzlesDone: S.puzzlesDone });
-                    closeModal();
-                    log('✓ CAPA-0112 completed — ISO 13485 §8.5 referenced. Batch record safe is now unlocked.', 'success');
-                    log('📚 Quality Fact: ISO 13485 §8.5.2 (Corrective Action) requires investigating causes of nonconformities and taking action to prevent recurrence. §8.5.3 covers preventive actions.', 'fact');
-                    renderRoom();
-                    renderNav();
+                    myPuzzleComplete('capa_done', () => {
+                      log(t('msg.capa_log'), 'success');
+                      log(t('msg.capa_fact'), 'fact');
+                      renderRoom();
+                      renderNav();
+                    });
                   } else {
                     S.wrongAnswers++;
                     if (S.socket) S.socket.emit('wrong_answer');
-                  setFeedback('Incorrect clause. CAPA sits in the "Improvement" section of ISO 13485. Think about section 8.', 'bad');
+                    setFeedback(t('fb.capa_prev_bad'), 'bad');
                   }
                 },
               });
@@ -1457,7 +1915,7 @@ function handleAction(action) {
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Incorrect. Review the maintenance log and SOP rack findings — the physical evidence points to a specific material change.', 'bad');
+            setFeedback(t('fb.capa_root_bad'), 'bad');
           }
         },
       });
@@ -1466,118 +1924,248 @@ function handleAction(action) {
     case 'check_iso_files':
       if (!S.found.iso_checked) {
         S.found.iso_checked = true;
-        addNote('ISO 13485 key clauses: §4 QMS | §6 Resources | §7 Product Realisation | <strong>§8 Measurement, Analysis & Improvement</strong> — includes §8.3 Nonconforming Product, §8.5.2 Corrective Action, §8.5.3 Preventive Action');
-        return { msg: 'ISO 13485 Filing Cabinet: The CAPA section is under §8 (Measurement, Analysis and Improvement). Specifically: §8.5.2 Corrective Action and §8.5.3 Preventive Action. Combined, this is referred to as "Clause 8.5."', cls: 'hint' };
+        addNote(t('note.iso13485'));
+        return { msg: t('msg.iso13485_files'), cls: 'hint' };
       }
-      return { msg: 'ISO 13485 §8.5 covers CAPA. That\'s what you need for the CAPA workstation.', cls: 'info' };
+      return { msg: t('msg.iso13485_already'), cls: 'info' };
 
     case 'open_batch_safe':
-      if (!S.solved.capa_done || !S.solved.iso9001_done) {
-        return { msg: 'The batch record safe displays: "CAPA + ISO 9001 VERIFICATION REQUIRED." Complete both the CAPA workstation and ISO 9001 Management Review first.', cls: 'warn' };
+      if (!S.solved.capa_done || !S.solved.iso9001_done || !S.solved.iso15378_done) {
+        const missing = [];
+        if (!S.solved.capa_done)     missing.push('CAPA (CAPA Workstation)');
+        if (!S.solved.iso9001_done)  missing.push('ISO 9001 Management Review');
+        if (!S.solved.iso15378_done) missing.push('ISO 15378 Compliance Check (QC Lab)');
+        return { msg: t('msg.batch_safe_locked').replace('{missing}', missing.join(', ')), cls: 'warn' };
       }
       if (S.solved.batch_retrieved) {
-        return { msg: 'You already have the Batch Release Certificate.', cls: 'info' };
+        return { msg: t('msg.batch_cert_already'), cls: 'info' };
       }
-      S.solved.batch_retrieved = true;
-      if (S.socket) S.socket.emit('puzzle_solved', { key: 'batch_retrieved', puzzlesDone: S.puzzlesDone });
-      S.found.batch_cert = true;
-      addItem('batch_cert');
-      addNote('Batch Release Certificate — Auth PIN: <strong>4471</strong>. Disposition: REJECT & Quarantine.', true);
-      return { msg: 'Batch Record Safe unlocked. Inside: the Batch Release Certificate for BN-2024-3200 — Disposition: REJECT & QUARANTINE. QA Auth PIN: 4471. Added to inventory.', cls: 'success' };
+      if (S.mySolved.batch_retrieved) {
+        return { msg: t('msg.your_task_done'), cls: 'info' };
+      }
+      S.mySolved.batch_retrieved = true;
+      if (!S.inventory.includes('batch_cert')) {
+        S.found.batch_cert = true;
+        addItem('batch_cert');
+        addNote(t('note.batch_cert'), true);
+      }
+      if (S.socket && !S.demoMode) {
+        S.socket.emit('player_puzzle_done', { key: 'batch_retrieved', puzzlesDone: S.puzzlesDone });
+        return { msg: t('msg.your_task_done'), cls: 'info' };
+      } else {
+        S.solved.batch_retrieved = true;
+        puzzleDone();
+        return { msg: t('msg.batch_safe_opened'), cls: 'success' };
+      }
 
     // ── DISPATCH ──────────────────────────────────────────────
     case 'use_release_terminal':
       if (S.solved.game_won) {
-        return { msg: 'Batch BN-2024-3200 has been authorised for quarantine. All quality records are complete.', cls: 'success' };
+        return { msg: t('msg.batch_authorised'), cls: 'success' };
       }
       if (!S.inventory.includes('batch_cert')) {
-        return { msg: 'The release terminal requires a Batch Release Certificate with an authorisation PIN. Obtain this from the QA Office.', cls: 'warn' };
+        return { msg: t('msg.pin_needs_cert'), cls: 'warn' };
+      }
+      // Always ask for PIN first, then gate on completion
+      openModal({
+        tag: t('tag.pin'),
+        title: t('title.pin'),
+        body: t('body.pin'),
+        questionKey: 'q.pin',
+        placeholder: t('q.pin.ph'),
+        submitLabel: t('btn.authorise'),
+        onSubmit: val => {
+          if (val.trim() !== '4471') {
+            // Wrong PIN → penalty
+            S.wrongAnswers++;
+            if (S.socket) S.socket.emit('wrong_answer');
+            setFeedback(t('fb.pin_bad'), 'bad');
+            return;
+          }
+          // Correct PIN — now check all puzzles complete
+          const required = ['coa_verified','inspection_done','ncr_filed','calibration_done',
+                            'capa_done','iso15378_done','iso9001_done','motto_challenge',
+                            'motto_production','motto_qaoffice','batch_retrieved'];
+          const missing = required.filter(k => !S.solved[k]);
+          if (missing.length > 0) {
+            closeModal();
+            showAlarm(missing);
+            return;
+          }
+          // PIN correct + all puzzles done → win
+          if (S.demoMode || !S.socket) {
+            S.solved.game_won = true;
+            puzzleDone();
+            closeModal();
+            triggerWin();
+          } else {
+            setFeedback(t('fb.pin_ok'), 'ok');
+            window._currentPuzzleKey = 'game_won';
+            myPuzzleComplete('game_won');
+          }
+        },
+      });
+      return null;
+
+    // ── MOTTO PUZZLE 2 — Production Line Poster ───────────────────────────
+    case 'read_quality_poster':
+      if (S.solved.motto_production) {
+        return { msg: t('msg.motto_prod_done'), cls: 'info' };
+      }
+      if (S.mySolved.motto_production) {
+        return { msg: t('msg.your_task_done'), cls: 'ok' };
       }
       openModal({
-        tag: 'BATCH RELEASE TERMINAL — ISO 13485 §8.3',
-        title: 'Batch Disposition Authorisation',
-        body: 'Under <strong>ISO 13485 §8.3</strong>, all nonconforming product must be formally dispositioned. You have the Batch Release Certificate for <strong>BN-2024-3200</strong> which contains the QA authorisation PIN.<br><br>Enter the <strong>4-digit QA Auth PIN</strong> to complete the batch disposition:',
-        placeholder: '4-digit PIN',
-        submitLabel: 'Authorise Disposition',
-        onSubmit: val => {
-          if (val.trim() === '4471') {
-            if (S.demoMode || !S.socket) {
-              // Demo / no socket — win immediately
-              S.solved.game_won = true;
-              puzzleDone();
-              closeModal();
-              triggerWin();
-            } else {
-              // Collaborative — all members must enter the PIN
-              setFeedback('✓ Correct PIN! All team members must confirm to authorise batch disposition…', 'ok');
-              document.getElementById('modal-submit').disabled = true;
-              S.socket.emit('code_found', { puzzleKey: 'game_won', code: '4471', label: 'Final Batch Disposition (PIN 4471)' });
-            }
+        tag: t('tag.motto_prod'),
+        title: t('title.motto_prod'),
+        body: t('body.motto_prod'),
+        questionKey: 'q.motto_prod',
+        puzzleKey: 'motto_production',
+        choices: tChoices('motto_prod', [
+          { label: 'A)  Reject, quarantine, and move on — the rejection itself is the corrective action', correct: false },
+          { label: 'B)  Reject, raise an NCR, investigate root cause, and raise a CAPA to prevent recurrence', correct: true },
+          { label: 'C)  Reject and increase the sample size for future batches only', correct: false },
+          { label: 'D)  Accept the batch under concession to maintain production schedule', correct: false },
+        ]),
+        onChoice: (correct) => {
+          if (correct) {
+            myPuzzleComplete('motto_production', () => {
+              log(t('msg.motto_prod_log'), 'success');
+              log(t('msg.motto_prod_fact'), 'fact');
+            });
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Incorrect PIN. Check the Batch Release Certificate in your inventory.', 'bad');
+            setFeedback(t('fb.motto_prod_bad'), 'bad');
+          }
+        },
+      });
+      return null;
+
+    // ── MOTTO PUZZLE 3 — QA Office Pledge ─────────────────────────────────
+    case 'read_quality_pledge':
+      if (S.solved.motto_qaoffice) {
+        return { msg: t('msg.motto_qa_done'), cls: 'info' };
+      }
+      if (S.mySolved.motto_qaoffice) {
+        return { msg: t('msg.your_task_done'), cls: 'ok' };
+      }
+      openModal({
+        tag: t('tag.motto_qa'),
+        title: t('title.motto_qa'),
+        body: t('body.motto_qa'),
+        questionKey: 'q.motto_qa',
+        puzzleKey: 'motto_qaoffice',
+        choices: tChoices('motto_qa', [
+          { label: 'A)  Only the QA department — they own all deviation records', correct: false },
+          { label: 'B)  Only the maintenance manager — it was their department\'s change', correct: false },
+          { label: 'C)  The technician who performed the action — anyone who deviates from an SOP must raise a deviation', correct: true },
+          { label: 'D)  Nobody — the process still ran, so no deviation existed at that point', correct: false },
+        ]),
+        onChoice: (correct) => {
+          if (correct) {
+            myPuzzleComplete('motto_qaoffice', () => {
+              log(t('msg.motto_qa_log'), 'success');
+              log(t('msg.motto_qa_fact'), 'fact');
+            });
+          } else {
+            S.wrongAnswers++;
+            if (S.socket) S.socket.emit('wrong_answer');
+            setFeedback(t('fb.motto_qa_bad'), 'bad');
           }
         },
       });
       return null;
 
     case 'inspect_quarantine':
-      return { msg: 'The quarantine cage holds pallet Q-2024-0892 — batch BN-2024-3200, tagged with NCR-0892. Label reads: "HOLD — DO NOT SHIP. Awaiting QA disposition." 3,200 plungers destined for diabetic patients are waiting for your final call.', cls: 'warn' };
+      return { msg: t('msg.quarantine_cage'), cls: 'warn' };
 
     case 'read_qw_banner':
+      if (S.solved.motto_challenge) {
+        return { msg: t('msg.motto_dis_done'), cls: 'info' };
+      }
+      if (S.mySolved.motto_challenge) {
+        return { msg: t('msg.your_task_done'), cls: 'ok' };
+      }
       openModal({
-        tag: 'QUALITY WEEK MESSAGE',
-        title: '"Zero Defects Saves Lives"',
-        body: '<strong>QUALITY WEEK — MediSeal Manufacturing</strong><br><br>Our plungers are used in:<br>• Insulin vials for Type 1 and Type 2 diabetics<br>• Prefilled syringes for insulin pens<br>• Lyophilised drug vials for critical medications<br><br>A single defective plunger that reaches a patient could mean:<br>• Incorrect insulin dose delivery<br>• Sterility breach → patient infection<br>• Loss of dose → life-threatening hypoglycaemia<br><br><strong>This is why AQL, CAPA, calibration, and GMP are not bureaucracy — they are patient safety.</strong><br><br><em>Every check you make protects a real person.</em>',
-        noInput: true,
+        tag: t('tag.motto_dis'),
+        title: t('title.motto_dis'),
+        body: t('body.motto_dis'),
+        questionKey: 'q.motto_dis',
+        puzzleKey: 'motto_challenge',
+        choices: tChoices('motto_dis', [
+          { label: 'A)  Leadership — management sets the direction and culture for quality', correct: false },
+          { label: 'B)  Customer Focus — understanding and meeting patient and customer requirements', correct: false },
+          { label: 'C)  Continual Improvement — enhancing all processes and outputs, step by step', correct: true },
+          { label: 'D)  Evidence-Based Decision Making — using data and facts to guide decisions', correct: false },
+        ]),
+        onChoice: (correct) => {
+          if (correct) {
+            myPuzzleComplete('motto_challenge', () => {
+              log(t('msg.motto_dis_log'), 'success');
+              log(t('msg.motto_dis_fact'), 'fact');
+            });
+          } else {
+            S.wrongAnswers++;
+            if (S.socket) S.socket.emit('wrong_answer');
+            setFeedback(t('fb.motto_dis_bad'), 'bad');
+          }
+        },
       });
       return null;
 
     // ── ISO 15378 PUZZLE ──────────────────────────────────────────────────
     case 'check_iso15378':
       if (S.solved.iso15378_done) {
-        return { msg: 'ISO 15378:2017 compliance confirmed. QA Office access available once calibration is complete.', cls: 'info' };
+        return { msg: t('msg.iso15378_done'), cls: 'info' };
+      }
+      if (S.mySolved.iso15378_done) {
+        return { msg: t('msg.your_task_done'), cls: 'ok' };
       }
       if (!S.found.stopper_spec) {
         S.found.stopper_spec = true;
         addItem('stopper_spec');
-        addNote('ISO 15378:2017 Packaging Spec: Rubber stoppers from Kautschuk GmbH. Standard combines <strong>ISO 9001:2015 + GMP</strong> for primary packaging. Key ref: <strong>Clause 8.7</strong> — Control of Nonconforming Outputs.', true);
+        addNote(t('note.iso15378'), true);
       }
       openModal({
-        tag: 'ISO 15378:2017 — PRIMARY PACKAGING COMPLIANCE',
-        title: 'ISO 15378:2017 Compliance Check — Packaging Materials',
-        body: 'ISO 15378:2017 is the international standard for <strong>primary packaging materials for medicinal products</strong>. It is mandatory for any supplier providing rubber stoppers, closures, and containers that come into direct contact with drugs.<br><br>The rubber stoppers in batch BN-2024-3200 were supplied under an ISO 15378:2017 certified QMS. This standard requires compliance with two core frameworks.<br><br><strong>Which two frameworks does ISO 15378:2017 combine?</strong>',
-        choices: [
-          { label: 'A)  ISO 13485 + FDA 21 CFR Part 820', correct: false },
-          { label: 'B)  ISO 9001:2015 + GMP (Good Manufacturing Practice)', correct: true },
-          { label: 'C)  ISO 14971 + ISO 9001:2015', correct: false },
-          { label: 'D)  ISO 2859-1 + ISO 13485', correct: false },
-        ],
+        tag: t('tag.iso15378_1'),
+        title: t('title.iso15378_1'),
+        body: t('body.iso15378_1'),
+        questionKey: 'q.iso15378_1',
+        puzzleKey: 'iso15378_done',
+        choices: tChoices('iso15378_1', [
+          { label: 'A)  Use them for non-patient-contact production to avoid waste', correct: false },
+          { label: 'B)  Physically segregate, apply a REJECT/HOLD label, and raise a supplier NCR before any disposition decision', correct: true },
+          { label: 'C)  Return them to the supplier immediately without raising any internal documentation', correct: false },
+          { label: 'D)  Blend them with conforming stock from another supplier lot to dilute the defect rate', correct: false },
+        ]),
         onChoice: (correct) => {
           if (correct) {
-            setFeedback('✓ Correct! ISO 15378 = ISO 9001:2015 QMS requirements + GMP requirements.', 'ok');
+            setFeedback(t('fb.iso15378_1_ok'), 'ok');
             setTimeout(() => {
               openModal({
-                tag: 'ISO 15378:2017 — STEP 2 OF 2',
-                title: 'ISO 15378:2017 — Supplier Audit Clause',
-                body: 'ISO 15378:2017 follows the same clause structure as ISO 9001:2015 with added GMP requirements. It is essential for qualifying packaging material suppliers like Kautschuk GmbH.<br><br>Under ISO 15378:2017, the clause covering <strong>control of nonconforming outputs</strong> (such as defective rubber stoppers that must be rejected and quarantined) follows ISO 9001:2015 clause numbering.<br><br><em>Hint: Check the ISO 15378 Packaging Specification in your inventory — the clause number is noted there.</em><br><br>Enter the <strong>ISO 9001:2015 clause number</strong> for "Control of nonconforming outputs":',
-                placeholder: 'e.g. 8.7',
-                submitLabel: 'Submit Clause',
-                onSubmit: val => {
-                  const v = val.trim().replace(/\s/g, '');
-                  if (v === '8.7' || v === '87') {
-                    S.solved.iso15378_done = true;
-                    puzzleDone();
-                    if (S.socket) S.socket.emit('puzzle_solved', { key: 'iso15378_done', puzzlesDone: S.puzzlesDone });
-                    closeModal();
-                    log('✓ ISO 15378:2017 compliance verified — Clause 8.7 (Control of Nonconforming Outputs) confirmed. QA Office now accessible.', 'success');
-                    log('📚 Quality Fact: ISO 15378:2017 requires primary packaging suppliers to maintain a QMS aligned with ISO 9001:2015 AND comply with GMP. Clause 8.7 mirrors ISO 9001 — any nonconforming material must be identified, segregated, and dispositioned.', 'fact');
-                    renderNav();
+                tag: t('tag.iso15378_2'),
+                title: t('title.iso15378_2'),
+                body: t('body.iso15378_2'),
+                questionKey: 'q.iso15378_2',
+                puzzleKey: 'iso15378_done',
+                choices: tChoices('iso15378_2', [
+                  { label: 'A)  Yes — as long as the correct information is visible, the method does not matter', correct: false },
+                  { label: 'B)  No — GDP requires a single line through the error leaving it legible, then the correct value, with date and initials', correct: true },
+                  { label: 'C)  Yes — correction fluid is standard practice in most pharmaceutical facilities', correct: false },
+                  { label: 'D)  No — the entire form must be destroyed and restarted to maintain data integrity', correct: false },
+                ]),
+                onChoice: (correct2) => {
+                  if (correct2) {
+                    myPuzzleComplete('iso15378_done', () => {
+                      log(t('msg.iso15378_log'), 'success');
+                      log(t('msg.iso15378_fact'), 'fact');
+                      renderNav();
+                    });
                   } else {
                     S.wrongAnswers++;
                     if (S.socket) S.socket.emit('wrong_answer');
-                    setFeedback('Incorrect. Nonconforming outputs are covered in ISO 9001:2015 section 8 (Operations). Think 8.something.', 'bad');
+                    setFeedback(t('fb.iso15378_2_bad'), 'bad');
                   }
                 },
               });
@@ -1585,7 +2173,7 @@ function handleAction(action) {
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Incorrect. ISO 15378 was designed to add GMP requirements on top of an existing QMS standard — the global quality management benchmark.', 'bad');
+            setFeedback(t('fb.iso15378_1_bad'), 'bad');
           }
         },
       });
@@ -1594,47 +2182,55 @@ function handleAction(action) {
     // ── ISO 9001 PUZZLE ───────────────────────────────────────────────────
     case 'check_iso9001':
       if (S.solved.iso9001_done) {
-        return { msg: 'ISO 9001:2015 Management Review completed. Batch record safe unlock pending CAPA completion.', cls: 'info' };
+        return { msg: t('msg.iso9001_done'), cls: 'info' };
+      }
+      if (S.mySolved.iso9001_done) {
+        return { msg: t('msg.your_task_done'), cls: 'ok' };
       }
       if (!S.found.iso9001_cert) {
         S.found.iso9001_cert = true;
         addItem('iso9001_cert');
-        addNote('ISO 9001:2015 Certificate — MediSeal. Risk-based thinking: <strong>Clause 6.1</strong>. Management Review: <strong>Clause 9.3</strong>.', true);
+        addNote(t('note.iso9001_cert'), true);
       }
       openModal({
-        tag: 'ISO 9001:2015 — QUALITY MANAGEMENT SYSTEM',
-        title: 'Management Review Board — ISO 9001:2015 Compliance',
-        body: 'MediSeal is certified to <strong>ISO 9001:2015</strong>, the world\'s most widely adopted QMS standard. ISO 13485 and ISO 15378:2017 both build upon ISO 9001:2015 as their foundation.<br><br>One of the major innovations in ISO 9001:2015 was <strong>risk-based thinking</strong> — requiring organisations to identify and address risks before they become nonconformances.<br><br>Under ISO 9001:2015, which clause specifically requires organisations to determine risks and opportunities and plan actions to address them?',
-        choices: [
-          { label: 'A)  Clause 4.1 — Understanding the organisation and its context', correct: false },
-          { label: 'B)  Clause 6.1 — Actions to address risks and opportunities', correct: true },
-          { label: 'C)  Clause 8.1 — Operational planning and control', correct: false },
-          { label: 'D)  Clause 9.1 — Monitoring, measurement, analysis and evaluation', correct: false },
-        ],
+        tag: t('tag.iso9001_1'),
+        title: t('title.iso9001_1'),
+        body: t('body.iso9001_1'),
+        questionKey: 'q.iso9001_1',
+        puzzleKey: 'iso9001_done',
+        choices: tChoices('iso9001_1', [
+          { label: 'A)  The monthly audit schedule was too infrequent to catch daily errors', correct: false },
+          { label: 'B)  There was no risk assessment on the lubricant change-over procedure — the risk was never identified', correct: true },
+          { label: 'C)  The maintenance log was not stored in the correct folder', correct: false },
+          { label: 'D)  The AQL sampling plan did not include visual inspection', correct: false },
+        ]),
         onChoice: (correct) => {
           if (correct) {
-            setFeedback('✓ Correct! Clause 6.1 — risk-based thinking is at the heart of ISO 9001:2015.', 'ok');
+            setFeedback(t('fb.iso9001_1_ok'), 'ok');
             setTimeout(() => {
               openModal({
-                tag: 'ISO 9001:2015 — STEP 2 OF 2',
-                title: 'Management Review — ISO 9001:2015 Clause',
-                body: 'Excellent. Risk-based thinking (Clause 6.1) means we proactively identify that things like using the wrong lubricant are a <em>risk</em>, not just a mistake.<br><br>The Management Review is a formal, documented meeting where top management reviews the QMS performance against objectives — reviewing audit results, NCR trends, customer feedback, and CAPA effectiveness.<br><br>Enter the <strong>ISO 9001:2015 clause number</strong> for "Management Review":',
-                placeholder: 'e.g. 9.3',
-                submitLabel: 'Submit Clause',
-                onSubmit: val => {
-                  const v = val.trim().replace(/\s/g, '');
-                  if (v === '9.3' || v === '93') {
-                    S.solved.iso9001_done = true;
-                    puzzleDone();
-                    if (S.socket) S.socket.emit('puzzle_solved', { key: 'iso9001_done', puzzlesDone: S.puzzlesDone });
-                    closeModal();
-                    log('✓ ISO 9001:2015 Management Review verified — Clause 9.3 confirmed. Batch Record Safe now fully unlocked (requires CAPA completion too).', 'success');
-                    log('📚 Quality Fact: ISO 9001:2015 Clause 9.3 requires top management to review the QMS at planned intervals. Inputs include audit results, NCR trends, CAPA status, and process performance. This drives continual improvement.', 'fact');
-                    renderRoom();
+                tag: t('tag.iso9001_2'),
+                title: t('title.iso9001_2'),
+                body: t('body.iso9001_2'),
+                questionKey: 'q.iso9001_2',
+                puzzleKey: 'iso9001_done',
+                choices: tChoices('iso9001_2', [
+                  { label: 'A)  Customer delivery schedules and production throughput targets only', correct: false },
+                  { label: 'B)  NCR trends, CAPA status, audit results, and process performance data', correct: true },
+                  { label: 'C)  Equipment purchase requests and IT infrastructure upgrades', correct: false },
+                  { label: 'D)  Individual employee performance reviews and salary discussions', correct: false },
+                ]),
+                onChoice: (correct2) => {
+                  if (correct2) {
+                    myPuzzleComplete('iso9001_done', () => {
+                      log(t('msg.iso9001_log'), 'success');
+                      log(t('msg.iso9001_fact'), 'fact');
+                      renderRoom();
+                    });
                   } else {
                     S.wrongAnswers++;
                     if (S.socket) S.socket.emit('wrong_answer');
-                    setFeedback('Incorrect. Management Review is in section 9 (Performance Evaluation). Think 9.something.', 'bad');
+                    setFeedback(t('fb.iso9001_2_bad'), 'bad');
                   }
                 },
               });
@@ -1642,15 +2238,97 @@ function handleAction(action) {
           } else {
             S.wrongAnswers++;
             if (S.socket) S.socket.emit('wrong_answer');
-            setFeedback('Incorrect. Risk-based thinking is about PLANNING for risks — which section of ISO 9001 covers planning?', 'bad');
+            setFeedback(t('fb.iso9001_1_bad'), 'bad');
           }
         },
       });
       return null;
 
+    // ── HIDDEN BONUS QUESTIONS ───────────────────────────────────────────
+    case 'find_hq_receiving_1':  openHiddenModal('hq_receiving_1');  return null;
+    case 'find_hq_receiving_2':  openHiddenModal('hq_receiving_2');  return null;
+    case 'find_hq_production_1': openHiddenModal('hq_production_1'); return null;
+    case 'find_hq_production_2': openHiddenModal('hq_production_2'); return null;
+    case 'find_hq_qclab_1':      openHiddenModal('hq_qclab_1');      return null;
+    case 'find_hq_qclab_2':      openHiddenModal('hq_qclab_2');      return null;
+    case 'find_hq_qaoffice_1':   openHiddenModal('hq_qaoffice_1');   return null;
+    case 'find_hq_qaoffice_2':   openHiddenModal('hq_qaoffice_2');   return null;
+    case 'find_hq_dispatch_1':   openHiddenModal('hq_dispatch_1');   return null;
+    case 'find_hq_dispatch_2':   openHiddenModal('hq_dispatch_2');   return null;
+
     default:
       return { msg: `Unknown action: ${action}`, cls: 'fail' };
   }
+}
+
+function openHiddenModal(hqId) {
+  window._currentHqId = hqId;
+  const result = S.hiddenAnswers[hqId];
+  if (result) {
+    // Already answered — show result only
+    const isCorrect = result.isCorrect;
+    const who       = escHtml(result.answeredBy);
+    const correct   = t('hq.' + hqId + '.' + result.correctOption);
+    const body      = (isCorrect
+      ? t('hq.result_correct')
+      : t('hq.result_wrong'))
+      .replace('{who}', who)
+      .replace('{correct}', correct);
+    openModal({
+      tag:      t('hq.found_badge'),
+      title:    t('hq.' + hqId + '.title'),
+      body:     '✅ ' + body,
+      noInput:  true,
+    });
+    return;
+  }
+  // Build choice list from translations
+  const choices = ['a','b','c','d'].map(opt => ({
+    label:   t('hq.' + hqId + '.' + opt),
+    correct: false,   // correctness determined server-side
+    opt,
+  })).filter(ch => ch.label && ch.label !== 'hq.' + hqId + '.' + ch.opt);
+
+  openModal({
+    tag:     t('hq.found_badge'),
+    title:   t('hq.' + hqId + '.title'),
+    body:    t('hq.intro') + '\n\n' + t('hq.' + hqId + '.body'),
+    noInput: true,
+    choices,
+    onChoice: (_, __, ch) => {
+      if (!S.socket || S.demoMode) {
+        // Demo mode: validate locally with correct-answer table; store result to prevent re-answering
+        if (S.hiddenAnswers[hqId]) return;  // already answered — ignore repeat clicks
+        const correctOpt = HQ_CORRECT_OPTS[hqId];
+        const isCorrect  = ch.opt === correctOpt;
+        const bonusPts   = isCorrect ? 20 : 0;
+        S.hiddenAnswers[hqId] = {
+          answeredBy:      S.memberName || 'Demo',
+          isCorrect,
+          bonusPts,
+          submittedOption: ch.opt,
+          correctOption:   correctOpt,
+        };
+        S.hiddenBonus = Object.values(S.hiddenAnswers)
+          .reduce((sum, r) => sum + (r && r.bonusPts ? r.bonusPts : 0), 0);
+        if (isCorrect) {
+          setFeedback(t('hq.answered_correct'), 'ok');
+        } else {
+          const correctLabel = t('hq.' + hqId + '.' + correctOpt);
+          setFeedback(t('hq.answered_wrong') + (correctLabel ? ' (' + correctLabel + ')' : ''), 'bad');
+        }
+        renderRoom();  // re-attach hq triggers with updated answered state
+        return;
+      }
+      // Guard: another player may have answered before this event was processed
+      if (S.hiddenAnswers[hqId]) return;
+      S.socket.emit('hidden_q_submit', { hqId, option: ch.opt });
+      setFeedback(t('hq.submitting'), 'ok');
+      // Disable choices to prevent re-submit
+      const choicesEl = document.getElementById('modal-choices');
+      if (choicesEl) choicesEl.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    },
+  });
 }
 
 // ────────────────────────────────────────────────
@@ -1676,11 +2354,12 @@ function puzzleDone() {
 }
 
 function updateProgress() {
-  const total = 8;
+  const total = 11;
   const pct = (S.puzzlesDone / total) * 100;
   document.getElementById('progress-bar').style.width = pct + '%';
+  const tpl = t('progress');
   document.getElementById('progress-label').textContent =
-    `Quality checks: ${S.puzzlesDone} / ${total} complete`;
+    tpl.replace('{done}', S.puzzlesDone).replace('{total}', total);
 }
 
 function log(msg, cls = 'info') {
@@ -1698,22 +2377,133 @@ function log(msg, cls = 'info') {
 function renderRoom() {
   const r = ROOMS[S.room];
   document.getElementById('room-emoji').textContent = r.emoji;
-  document.getElementById('room-badge').textContent = r.badge;
-  document.getElementById('room-title').textContent = r.name;
-  document.getElementById('room-desc').textContent = r.desc;
+  document.getElementById('room-badge').textContent = t('room.badge.' + r.id) || r.badge;
+  document.getElementById('room-title').textContent = t('room.' + r.id) || r.name;
+  document.getElementById('room-desc').textContent = t('room.desc.' + r.id) || r.desc;
 
   const hs = document.getElementById('hotspots');
   hs.innerHTML = '';
   r.hotspots.forEach(h => {
     const b = document.createElement('button');
     b.className = 'hotspot-btn';
-    b.textContent = h.label;
+    const tLabel = t('hs.' + h.action);
+    b.textContent = (tLabel !== 'hs.' + h.action) ? tLabel : h.label;
     b.onclick = () => {
+      if (S.paused || S.over) return;
       const result = handleAction(h.action);
       if (result) log(result.msg, result.cls);
     };
     hs.appendChild(b);
   });
+
+  // Hint button
+  const hintBtn = document.createElement('button');
+  const hintUsed = S.hintsUsed[S.room];
+  hintBtn.className = 'hotspot-btn hint-btn' + (hintUsed ? ' used' : '');
+  hintBtn.textContent = hintUsed ? `💡 ${t('nav.hint_used')}` : t('nav.hint_btn');
+  hintBtn.disabled = !!hintUsed;
+  hintBtn.onclick = () => { if (!S.paused && !S.over) useHint(); };
+  hs.appendChild(hintBtn);
+
+  // Hidden bonus question triggers — 7 distinct mechanisms across 10 spots
+  // Clean up any dynamically inserted spot elements from previous render
+  document.querySelectorAll('.hq-spot').forEach(el => el.remove());
+  // Reset onclick on elements that receive direct handler attachment
+  ['room-emoji','room-badge','room-title','progress-label'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('hq-trigger','hq-answered'); el.onclick = null; el.style.cursor = ''; }
+  });
+
+  if (r.hiddenSpots) {
+    r.hiddenSpots.forEach(spot => {
+      const hqId = spot.action.replace('find_hq_', 'hq_');
+      const done = !!S.hiddenAnswers[hqId];
+      const fire = () => { if (!S.paused && !S.over) handleAction(spot.action); };
+      attachHQSpot(spot.trigger, spot.emoji, done, fire);
+    });
+  }
+}
+
+// Attaches a hidden bonus question trigger using one of 7 distinct mechanisms.
+function attachHQSpot(triggerType, emoji, done, fire) {
+  switch (triggerType) {
+
+    case 'room-emoji': {
+      const el = document.getElementById('room-emoji');
+      if (!el) break;
+      el.classList.add('hq-trigger'); if (done) el.classList.add('hq-answered');
+      el.onclick = fire;
+      break;
+    }
+    case 'badge': {
+      const el = document.getElementById('room-badge');
+      if (!el) break;
+      el.classList.add('hq-trigger'); if (done) el.classList.add('hq-answered');
+      el.onclick = fire;
+      break;
+    }
+    case 'room-title': {
+      const el = document.getElementById('room-title');
+      if (!el) break;
+      el.classList.add('hq-trigger'); if (done) el.classList.add('hq-answered');
+      el.onclick = fire;
+      break;
+    }
+    case 'desc-append': {
+      const desc = document.getElementById('room-desc');
+      if (!desc) break;
+      const span = document.createElement('span');
+      span.className = 'hq-spot hq-spot-inline' + (done ? ' hq-done' : '');
+      span.textContent = ' ' + emoji;
+      span.setAttribute('role', 'button');
+      span.setAttribute('tabindex', '0');
+      span.onclick = fire;
+      span.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } };
+      desc.appendChild(span);
+      break;
+    }
+    case 'progress-prefix': {
+      const prog = document.getElementById('progress-label');
+      if (!prog) break;
+      const span = document.createElement('span');
+      span.className = 'hq-spot hq-spot-inline' + (done ? ' hq-done' : '');
+      span.textContent = emoji + ' ';
+      span.setAttribute('role', 'button');
+      span.setAttribute('tabindex', '0');
+      span.onclick = fire;
+      span.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } };
+      prog.prepend(span);
+      break;
+    }
+    case 'hotspot-suffix': {
+      const hs = document.getElementById('hotspots');
+      if (!hs) break;
+      const span = document.createElement('span');
+      span.className = 'hq-spot hq-spot-hs-suffix' + (done ? ' hq-done' : '');
+      span.textContent = emoji;
+      span.setAttribute('role', 'button');
+      span.setAttribute('tabindex', '0');
+      span.onclick = fire;
+      span.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } };
+      hs.appendChild(span);
+      break;
+    }
+    case 'art-corner': {
+      const art = document.getElementById('room-art');
+      if (!art) break;
+      const div = document.createElement('div');
+      div.className = 'hq-spot hq-spot-art-corner' + (done ? ' hq-done' : '');
+      div.textContent = done ? '✓' : emoji;
+      div.setAttribute('role', 'button');
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('aria-label', (done ? '✓ ' : '') + emoji);
+      div.setAttribute('title', done ? t('hq.found_badge') : '?');
+      div.onclick = fire;
+      div.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } };
+      art.appendChild(div);
+      break;
+    }
+  }
 }
 
 function renderInventory() {
@@ -1728,15 +2518,15 @@ function renderInventory() {
       const item = ITEMS[id];
       slot.classList.add('filled');
       slot.textContent = item.emoji;
-      slot.dataset.tip = item.name;
+      slot.dataset.tip = t('item.' + id + '.name') || item.name;
       if (S.selectedItem === id) slot.classList.add('selected');
       slot.onclick = () => {
         if (S.selectedItem === id) {
           S.selectedItem = null;
-          log('Deselected.', 'info');
+          log(t('msg.deselected'), 'info');
         } else {
           S.selectedItem = id;
-          log(`Selected: ${item.name} — ${item.desc}`, 'hint');
+          log(`${t('item.selected_prefix')}${t('item.' + id + '.name') || item.name} — ${t('item.' + id + '.desc') || item.desc}`, 'hint');
         }
         renderInventory();
       };
@@ -1748,7 +2538,7 @@ function renderInventory() {
 function renderNotes() {
   const box = document.getElementById('notes-content');
   if (!S.notes.length) {
-    box.innerHTML = '<p>No entries yet.</p>';
+    box.innerHTML = `<p>${t('side.no_entries')}</p>`;
     return;
   }
   box.innerHTML = S.notes.map(n =>
@@ -1760,20 +2550,55 @@ function renderNotes() {
 function renderNav() {
   const nav = document.getElementById('room-nav');
   nav.innerHTML = '';
+  const currentIdx = ROOM_ORDER.indexOf(S.room);
+
+  // ── Room path breadcrumb ──────────────────────────────────────
+  const pathEl = document.createElement('div');
+  pathEl.id = 'room-path';
+  ROOM_ORDER.forEach((rid, i) => {
+    const r = ROOMS[rid];
+    const isCurrent = rid === S.room;
+    const isVisited  = i < currentIdx;
+    const span = document.createElement('span');
+    span.className = 'rp-room ' + (isCurrent ? 'current' : isVisited ? 'visited' : 'future');
+    span.textContent = r.emoji;
+    span.title = (t('room.' + rid) || r.name) + (isCurrent ? t('nav.here') : isVisited ? t('nav.visited') : canEnter(rid) ? t('nav.unlocked') : t('nav.locked'));
+    pathEl.appendChild(span);
+    if (i < ROOM_ORDER.length - 1) {
+      const sep = document.createElement('span');
+      sep.className = 'rp-sep';
+      sep.textContent = '→';
+      pathEl.appendChild(sep);
+    }
+  });
+  nav.appendChild(pathEl);
+
+  // ── Current room indicator ────────────────────────────────────
+  const cur = document.createElement('div');
+  cur.id = 'current-location';
+  cur.innerHTML = `📍 ${t('nav.you_are_in')} <strong>${t('room.' + S.room) || ROOMS[S.room].name}</strong>`;
+  nav.appendChild(cur);
+
+  // ── Navigation buttons with direction icons ───────────────────
   const adj = EXITS[S.room] || [];
   adj.forEach(roomId => {
     const r = ROOMS[roomId];
     const unlocked = canEnter(roomId);
+    const roomIdx  = ROOM_ORDER.indexOf(roomId);
+    const isNext   = roomIdx > currentIdx;
     const btn = document.createElement('button');
-    btn.className = 'nav-btn ' + (unlocked ? 'open' : 'locked');
-    btn.textContent = r.name;
+    if (!isNext) {
+      btn.className = 'nav-btn prev';
+    } else if (unlocked) {
+      btn.className = 'nav-btn next-open';
+    } else {
+      btn.className = 'nav-btn next-locked';
+    }
+    btn.textContent = t('room.' + roomId) || r.name;
+    if (!unlocked) btn.title = lockReason(roomId);
     btn.onclick = () => goTo(roomId);
     nav.appendChild(btn);
   });
-  const loc = document.createElement('div');
-  loc.id = 'current-location';
-  loc.innerHTML = `📍 ${ROOMS[S.room].name}`;
-  nav.appendChild(loc);
 }
 
 // ────────────────────────────────────────────────
@@ -1781,10 +2606,20 @@ function renderNav() {
 // ────────────────────────────────────────────────
 let _onSubmit  = null;
 
-function openModal({ tag, title, body, placeholder, submitLabel, onSubmit, noInput, choices, onChoice }) {
-  document.getElementById('modal-tag').textContent   = tag   || 'QUALITY CONTROL';
+function openModal({ tag, title, body, questionKey, placeholder, submitLabel, onSubmit, noInput, choices, onChoice, puzzleKey }) {
+  window._currentPuzzleKey = puzzleKey || null;
+  document.getElementById('modal-tag').textContent   = tag   || t('modal.default_tag');
   document.getElementById('modal-title').textContent = title || '';
-  document.getElementById('modal-body').innerHTML    = body  || '';
+
+  // Append translated question block for non-English players
+  let finalBody = body || '';
+  if (questionKey && S.lang !== 'en') {
+    const tq = t(questionKey);
+    if (tq && tq !== questionKey) {
+      finalBody += `<div style="margin-top:14px;padding:10px 14px;background:rgba(0,153,230,0.1);border-inline-start:3px solid var(--accent);border-radius:3px;font-size:0.9rem;color:var(--text);font-weight:600;">🌐 ${tq}</div>`;
+    }
+  }
+  document.getElementById('modal-body').innerHTML    = finalBody;
   document.getElementById('modal-feedback').textContent = '';
   document.getElementById('modal-feedback').className   = '';
 
@@ -1795,6 +2630,9 @@ function openModal({ tag, title, body, placeholder, submitLabel, onSubmit, noInp
   choicesEl.innerHTML = '';
   choicesEl.style.display = 'none';
 
+  document.getElementById('modal-cancel').textContent = t('modal.close');
+  sub.textContent = submitLabel || t('modal.submit');
+
   if (choices && choices.length) {
     inp.style.display = 'none';
     sub.style.display = 'none';
@@ -1803,7 +2641,7 @@ function openModal({ tag, title, body, placeholder, submitLabel, onSubmit, noInp
       const b = document.createElement('button');
       b.className = 'choice-btn';
       b.textContent = ch.label;
-      b.onclick = () => onChoice && onChoice(ch.correct, ch.label);
+      b.onclick = () => { if (S.paused || S.over) return; onChoice && onChoice(ch.correct, ch.label, ch); };
       choicesEl.appendChild(b);
     });
   } else if (noInput) {
@@ -1814,7 +2652,7 @@ function openModal({ tag, title, body, placeholder, submitLabel, onSubmit, noInp
     inp.placeholder   = placeholder || '';
     inp.value         = '';
     sub.style.display = 'inline-block';
-    sub.textContent   = submitLabel || 'Submit';
+    sub.disabled      = false;
     setTimeout(() => inp.focus(), 60);
   }
 
@@ -1825,6 +2663,7 @@ function openModal({ tag, title, body, placeholder, submitLabel, onSubmit, noInp
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('show');
   _onSubmit = null;
+  window._currentHqId = null;
 }
 
 function setFeedback(msg, type) {
@@ -1834,26 +2673,53 @@ function setFeedback(msg, type) {
 }
 
 document.getElementById('modal-submit').onclick = () => {
+  if (S.paused || S.over) return;
   if (_onSubmit) _onSubmit(document.getElementById('modal-input').value);
 };
 document.getElementById('modal-input').onkeydown = e => {
-  if (e.key === 'Enter' && _onSubmit) _onSubmit(document.getElementById('modal-input').value);
+  if (e.key === 'Enter' && _onSubmit && !S.paused && !S.over) _onSubmit(document.getElementById('modal-input').value);
 };
 document.getElementById('modal-cancel').onclick = closeModal;
 
 // ────────────────────────────────────────────────
 // TIMER
 // ────────────────────────────────────────────────
+// REG_SECS = 30*60 = 1800, MAX_SECS = 60*60 = 3600, OT_THRESH = 1800
+const REG_SECS_CLIENT  = 30 * 60;
+const MAX_SECS_CLIENT  = 60 * 60;
+const OT_THRESH_CLIENT = MAX_SECS_CLIENT - REG_SECS_CLIENT; // 1800
+const WRONG_PTS_CLIENT = 50;  // must match server WRONG_PTS
+
 function startTimer() {
   S.timerInt = setInterval(() => {
-    if (S.over) return;
+    if (S.over || S.paused) return;
     S.timerSec--;
-    const m = Math.floor(S.timerSec / 60);
-    const s = S.timerSec % 60;
     const el = document.getElementById('timer');
-    el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    if (S.timerSec <= 120) el.classList.add('urgent');
-    if (S.timerSec <= 0) { clearInterval(S.timerInt); triggerLose(); }
+
+    if (S.timerSec >= OT_THRESH_CLIENT) {
+      // Regulation time: count down from 30:00
+      const regLeft = S.timerSec - OT_THRESH_CLIENT;
+      const m = Math.floor(regLeft / 60);
+      const s = regLeft % 60;
+      el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.classList.remove('overtime', 'urgent');
+      if (regLeft <= 120) el.classList.add('urgent');
+    } else if (S.timerSec > 0) {
+      // Overtime: show how far past regulation
+      const otSec = OT_THRESH_CLIENT - S.timerSec;
+      const m = Math.floor(otSec / 60);
+      const s = otSec % 60;
+      el.textContent = `OT +${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.classList.remove('urgent');
+      el.classList.add('overtime');
+      if (otSec === 60) log(t('msg.overtime'), 'warn');
+      updateLiveScore();  // overtime penalty changes each minute
+    } else {
+      // Hard stop at 60 min
+      clearInterval(S.timerInt);
+      if (S.socket) S.socket.emit('overtime_hardstop');
+      triggerLose();
+    }
   }, 1000);
 }
 
@@ -1881,28 +2747,65 @@ function showEndScreen(won, data) {
   const score            = data.score            || 0;
   const puzzlesDone      = data.puzzlesDone      || 0;
   const wrongAnswers     = data.wrongAnswers      || 0;
+  const hintPenalty      = S.hintPenalty         || 0;
   const secondsRemaining = data.secondsRemaining  || 0;
-  const timeBonusPts     = won ? secondsRemaining * 2 : 0;
-  const penaltyPts       = wrongAnswers * 10;
-  const elapsed          = 25 * 60 - secondsRemaining;
-  const em = String(Math.floor(elapsed / 60)).padStart(2,'0');
-  const es = String(elapsed % 60).padStart(2,'0');
+  const hiddenBonus      = data.hiddenBonus       !== undefined ? data.hiddenBonus : S.hiddenBonus;
+  const hiddenFound      = data.hiddenFound       !== undefined ? data.hiddenFound : Object.keys(S.hiddenAnswers).length;
+  const hiddenCorrect    = data.hiddenCorrect     !== undefined ? data.hiddenCorrect : Object.values(S.hiddenAnswers).filter(r => r && r.isCorrect).length;
+  const isOvertime       = secondsRemaining < OT_THRESH_CLIENT;
+  const ptPerPuzzle      = isOvertime ? 180 : 200;
+  const regSecsLeft      = isOvertime ? 0 : (secondsRemaining - OT_THRESH_CLIENT);
+  const timeBonusPts     = (won && !isOvertime) ? regSecsLeft * 2 : 0;
+  const penaltyPts       = wrongAnswers * WRONG_PTS_CLIENT;
+  const overtimeSecs     = isOvertime ? (OT_THRESH_CLIENT - secondsRemaining) : 0;
+  const overtimePenalty  = Math.ceil(overtimeSecs / 60) * 30;
+  const timeSpentSec     = data.timeSpentSec || (MAX_SECS_CLIENT - secondsRemaining);
+  const em = String(Math.floor(timeSpentSec / 60)).padStart(2,'0');
+  const es = String(timeSpentSec % 60).padStart(2,'0');
+  const pts = t('pts');
 
   const end = document.getElementById('endscreen');
   end.className = 'show ' + (won ? 'win' : 'lose');
   document.getElementById('end-icon').textContent  = won ? '🏆' : '⏱️';
-  document.getElementById('end-title').textContent = won ? 'Audit Simulation Passed!' : 'LOCKDOWN — AUDIT FAILED';
-  document.getElementById('end-msg').textContent   = won
-    ? "Excellent work! Your group completed all quality checks, identified the root cause, and correctly dispositioned the nonconforming batch — protecting patients and MediSeal's GMP licence."
-    : "Time expired. The FDA auditor arrived before your group completed all quality checks. Batch BN-2024-3200 remains unresolved.";
-  document.getElementById('end-stats').innerHTML =
-    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">Score Breakdown — ' + (S.demoMode ? 'DEMO' : escHtml(S.groupName || '')) + '</strong><br>' +
-    'Puzzles completed (' + puzzlesDone + ' × 200): <span>+' + (puzzlesDone * 200).toLocaleString() + ' pts</span><br>' +
-    'Time bonus' + (won ? ' (' + secondsRemaining + 's × 2)' : ' (not completed)') + ': <span>' + (won ? '+' + timeBonusPts.toLocaleString() : '0') + ' pts</span><br>' +
-    'Wrong answer penalty (' + wrongAnswers + ' × −10): <span style="color:var(--danger);">−' + penaltyPts.toLocaleString() + ' pts</span><br>' +
-    '<strong>TOTAL SCORE: <span style="font-size:1.2rem;color:' + (won ? 'var(--accent2)' : 'var(--danger)') + ';">' + score.toLocaleString() + '</span> pts</strong><br><br>' +
-    'Time taken: <span>' + em + ':' + es + '</span><br>' +
-    (S.demoMode ? '<em style="color:var(--dim);">Demo — score not saved</em>' : '<a href="/admin.html" target="_blank" style="color:var(--accent);">📊 View Leaderboard</a>');
+  document.getElementById('end-title').textContent = won ? t('end.won') : t('end.lost');
+  document.getElementById('end-msg').textContent   = won ? t('end.msg_won') : t('end.msg_lost');
+
+  let statsHtml =
+    '<strong style="color:' + (won ? 'var(--accent)' : 'var(--danger)') + '">' + t('end.score_title') + ' — ' + (S.demoMode ? t('end.demo_note').split(' — ')[0] : escHtml(S.groupName || '')) + '</strong><br>' +
+    t('end.puzzles_n').replace('{n}', puzzlesDone).replace('{pts}', ptPerPuzzle) + ': <span>+' + (puzzlesDone * ptPerPuzzle).toLocaleString() + ' ' + pts + '</span><br>';
+
+  if (won && !isOvertime) {
+    statsHtml += t('end.time_bonus_n').replace('{secs}', regSecsLeft) + ': <span>+' + timeBonusPts.toLocaleString() + ' ' + pts + '</span><br>';
+  } else {
+    statsHtml += t('end.time_bonus_ot') + ': <span>0 ' + pts + '</span><br>';
+  }
+  if (isOvertime) {
+    statsHtml += t('end.overtime_n').replace('{min}', Math.ceil(overtimeSecs/60)) + ': <span style="color:var(--danger);">−' + overtimePenalty.toLocaleString() + ' ' + pts + '</span><br>';
+  }
+  statsHtml +=
+    t('end.wrong_n').replace('{n}', wrongAnswers) + ': <span style="color:var(--danger);">−' + penaltyPts.toLocaleString() + ' ' + pts + '</span><br>' +
+    (hintPenalty ? t('end.hint_pen') + ': <span style="color:var(--danger);">−' + hintPenalty.toLocaleString() + ' ' + pts + '</span><br>' : '') +
+    (hiddenFound > 0
+      ? t('end.hidden_bonus').replace('{found}', hiddenFound).replace('{correct}', hiddenCorrect) + ': <span style="color:' + (hiddenBonus > 0 ? 'var(--accent2)' : 'var(--dim)') + ';">+' + hiddenBonus.toLocaleString() + ' ' + pts + '</span><br>'
+      : '') +
+    '<strong>' + t('end.total_score') + ' <span style="font-size:1.2rem;color:' + (won ? 'var(--accent2)' : 'var(--danger)') + ';">' + score.toLocaleString() + '</span> ' + pts + '</strong><br><br>' +
+    t('end.time_taken') + ' <span>' + em + ':' + es + '</span><br>' +
+    (S.demoMode ? '<em style="color:var(--dim);">' + t('end.demo_note') + '</em>' : '<a href="/admin.html" target="_blank" style="color:var(--accent);">' + t('end.lb_link') + '</a>');
+
+  // HQ per-question breakdown
+  if (hiddenFound > 0) {
+    statsHtml += '<br><strong style="color:var(--dim);font-size:0.78rem;">' + t('end.hq_breakdown_h') + '</strong><br>';
+    const hqMap = data.hiddenAnswers || S.hiddenAnswers || {};
+    Object.entries(hqMap).forEach(([hqId, r]) => {
+      if (!r) return;
+      const qTitle = t('hq.' + hqId + '.title') || hqId;
+      const icon   = r.isCorrect ? '✓' : '✗';
+      const col    = r.isCorrect ? 'var(--accent2)' : 'var(--danger)';
+      statsHtml += '<span style="color:' + col + ';font-size:0.75rem;">' + icon + ' ' + escHtml(qTitle) + (r.isCorrect ? ' (+' + r.bonusPts + ' ' + pts + ')' : '') + '</span><br>';
+    });
+  }
+
+  document.getElementById('end-stats').innerHTML = statsHtml;
 }
 
 // ────────────────────────────────────────────────
@@ -1910,15 +2813,17 @@ function showEndScreen(won, data) {
 // ────────────────────────────────────────────────
 function doStartGame(timerSec) {
   if (timerSec !== undefined) S.timerSec = timerSec;
+  else S.timerSec = MAX_SECS_CLIENT;
   document.getElementById('startscreen').style.display = 'none';
   renderRoom();
   renderInventory();
   renderNotes();
   renderNav();
   updateProgress();
+  updateLiveScore();
   startTimer();
-  log('Facility lockdown in effect. Report to the Receiving Dock and begin your investigation.', 'warn');
-  log('Tip: Examine every hotspot. Collect items. Read your notes. The answers are all here.', 'hint');
+  log(t('msg.game_start_1'), 'warn');
+  log(t('msg.game_start_2'), 'hint');
 }
 
 document.getElementById('start-btn').onclick = () => {
@@ -1930,7 +2835,7 @@ document.getElementById('start-btn').onclick = () => {
   // Real mode: signal ready to server; game starts when all members are ready
   if (S.socket) {
     document.getElementById('start-btn').disabled = true;
-    document.getElementById('start-btn').textContent = '✓ I\'m Ready — waiting…';
+    document.getElementById('start-btn').textContent = t('start.btn_waiting_text');
     document.getElementById('start-waiting').style.display = 'block';
     document.getElementById('lobby-error-msg').textContent = '';
     S.socket.emit('player_ready');
@@ -1944,16 +2849,82 @@ initLogin();
 // SOCKET.IO — REAL-TIME GROUP SYNC
 // ────────────────────────────────────────────────
 const PUZZLE_LABELS = {
-  coa_verified:     'GMP Material Verification',
-  inspection_done:  'AQL Visual Inspection',
-  ncr_filed:        'Non-Conformance Report',
-  calibration_done: 'Instrument Calibration',
-  capa_done:        'CAPA Root Cause Analysis',
-  batch_retrieved:  'Batch Record Retrieved',
-  game_won:         'Final Batch Release',
-  iso15378_done:    'ISO 15378:2017 Compliance Check',
-  iso9001_done:     'ISO 9001:2015 Management Review',
+  coa_verified:      'GMP Material Verification',
+  inspection_done:   'AQL Visual Inspection',
+  ncr_filed:         'Non-Conformance Report',
+  calibration_done:  'Instrument Calibration',
+  capa_done:         'CAPA Root Cause Analysis',
+  batch_retrieved:   'Batch Record Retrieved',
+  game_won:          'Final Batch Release',
+  iso15378_done:     'ISO 15378:2017 Compliance Check',
+  iso9001_done:      'ISO 9001:2015 Management Review',
+  motto_challenge:   'Quality Week Motto Challenge (Dispatch)',
+  motto_production:  'Quality Improvement Motto (Production)',
+  motto_qaoffice:    'Quality Ownership Motto (QA Office)',
 };
+
+// Maps each puzzle key → where to go and exactly which button to press
+const PUZZLE_ROOM = {
+  coa_verified:    { room: 'receiving',   emoji: '📦', name: 'Receiving Dock',               btn: 'GMP Receiving Terminal',              hs: 'hs.gmp_terminal' },
+  inspection_done: { room: 'production',  emoji: '🏭', name: 'Production Line',              btn: 'Visual Inspection Light Box',         hs: 'hs.use_lightbox' },
+  ncr_filed:       { room: 'production',  emoji: '🏭', name: 'Production Line',              btn: 'NCR Filing Station',                  hs: 'hs.file_ncr' },
+  calibration_done:{ room: 'qclab',       emoji: '🔬', name: 'Quality Control Laboratory',   btn: 'Micrometer Station',                  hs: 'hs.use_micrometer' },
+  capa_done:       { room: 'qaoffice',    emoji: '🗂️', name: 'QA & Compliance Office',       btn: 'CAPA Workstation',                    hs: 'hs.use_capa_station' },
+  iso15378_done:   { room: 'qclab',       emoji: '🔬', name: 'Quality Control Laboratory',   btn: 'ISO 15378 Packaging Compliance File', hs: 'hs.check_iso15378' },
+  iso9001_done:    { room: 'qaoffice',    emoji: '🗂️', name: 'QA & Compliance Office',       btn: 'ISO 9001 Management Review',          hs: 'hs.check_iso9001' },
+  motto_challenge: { room: 'dispatch',    emoji: '🚚', name: 'Dispatch & Release Bay',       btn: 'Quality Week Banner',                 hs: 'hs.read_qw_banner' },
+  motto_production:{ room: 'production',  emoji: '🏭', name: 'Production Line',              btn: 'Quality Improvement Poster',          hs: 'hs.read_quality_poster' },
+  motto_qaoffice:  { room: 'qaoffice',    emoji: '🗂️', name: 'QA & Compliance Office',       btn: 'Quality Pledge (Wall Frame)',         hs: 'hs.read_quality_pledge' },
+};
+
+function showAlarm(missingKeys, context) {
+  const roomsEl = document.getElementById('alarm-rooms');
+  roomsEl.innerHTML = '';
+  document.getElementById('alarm-title').textContent = t('alarm.title');
+  const subEl = document.getElementById('alarm-sub');
+  subEl.textContent = context === 'depart' ? t('alarm.sub.depart') : t('alarm.sub.pin');
+  document.getElementById('alarm-ok').textContent = t('alarm.ok');
+  // Group by room so we don't repeat the same room heading
+  const seen = {};
+  missingKeys.forEach(k => {
+    const info = PUZZLE_ROOM[k];
+    if (!info) return;
+    const roomKey = info.room;
+    if (!seen[roomKey]) {
+      seen[roomKey] = { info, btns: [] };
+    }
+    seen[roomKey].btns.push({ label: PUZZLE_LABELS[k] || k, btn: t(info.hs) || info.btn });
+  });
+  Object.values(seen).forEach(({ info, btns }) => {
+    const div = document.createElement('div');
+    div.className = 'alarm-room-item';
+    const tRoomName = t('room.' + info.room) || info.name;
+    div.innerHTML = `<div class="alarm-room-name">${info.emoji} ${t('alarm.go_to')} <span style="color:#40c8ff;">${tRoomName}</span></div>` +
+      btns.map(b => `<div class="alarm-room-btn">${t('alarm.press')} <strong>${b.btn}</strong></div>`).join('');
+    roomsEl.appendChild(div);
+  });
+  const overlay = document.getElementById('alarm-overlay');
+  overlay.classList.add('show');
+  // Play alarm sound via oscillator if audio available
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 660, 880, 660].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'square';
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.22);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.22 + 0.2);
+      osc.start(ctx.currentTime + i * 0.22);
+      osc.stop(ctx.currentTime + i * 0.22 + 0.2);
+    });
+  } catch(e) {}
+}
+
+function closeAlarm() {
+  document.getElementById('alarm-overlay').classList.remove('show');
+}
 
 function connectSocket() {
   if (!S.authToken || S.demoMode || S.socket) return;
@@ -1962,8 +2933,11 @@ function connectSocket() {
 
   sock.on('connect', () => {
     document.getElementById('chat-input').disabled     = false;
-    document.getElementById('chat-input').placeholder  = 'Message your team…';
+    document.getElementById('chat-input').placeholder  = t('chat.placeholder');
   });
+
+  // Heartbeat for mobile/unstable connection resilience
+  setInterval(() => { if (S.socket?.connected) S.socket.emit('heartbeat'); }, 8000);
 
   sock.on('state_init', ({ state, chats, members }) => {
     if (state) applyServerState(state);
@@ -1978,18 +2952,91 @@ function connectSocket() {
     }
   });
 
+  // puzzle_solved = ALL players completed this puzzle (group-level done)
   sock.on('puzzle_solved', ({ key, puzzlesDone, fromName }) => {
     if (S.solved[key]) return;
-    S.solved[key]  = true;
-    S.puzzlesDone  = Math.max(S.puzzlesDone, puzzlesDone);
+    S.solved[key]   = true;
+    S.mySolved[key] = true;  // also mark my own (in case server confirmed me)
+    S.puzzlesDone   = Math.max(S.puzzlesDone, puzzlesDone);
+    closeModal();
+    puzzleDone();
     updateProgress(); renderNav(); renderRoom();
-    log(`✓ ${fromName} completed: ${PUZZLE_LABELS[key] || key}`, 'success');
+    updateLiveScore();
+    log(t('log.all_players_done').replace('{label}', t('puzzle.label.' + key) || PUZZLE_LABELS[key] || key), 'success');
+    // Per-puzzle post-actions
+    if (key === 'coa_verified') {
+      log(t('msg.gmp_fact'), 'fact');
+    } else if (key === 'game_won') {
+      triggerWin();
+    }
+  });
+
+  // player_puzzle_progress = individual player completed their task
+  sock.on('player_puzzle_progress', ({ key, memberName: who, completedCount, total }) => {
+    appendSystemChat(t('msg.team_progress').replace('{done}', completedCount).replace('{total}', total) + ' — ' + escHtml(who));
+    const fb = document.getElementById('modal-feedback');
+    if (fb && window._currentPuzzleKey === key && !S.solved[key]) {
+      fb.textContent = t('msg.team_progress').replace('{done}', completedCount).replace('{total}', total);
+      fb.className   = 'ok';
+    }
+  });
+
+  // game_paused = a locked player disconnected
+  sock.on('game_paused', ({ memberName: who, lockedRoster }) => {
+    S.paused = true;
+    clearInterval(S.timerInt);
+    const body = t('pause.body').replace('{name}', escHtml(who)).replace('{total}', lockedRoster.length);
+    document.getElementById('pause-body').textContent = body;
+    // member_leave arrives 500ms after game_paused, so exclude 'who' from online list now
+    const onlineNow = (S.membersOnline || []).filter(n => n !== who);
+    const missing = lockedRoster.filter(n => !onlineNow.includes(n));
+    document.getElementById('pause-waiting').textContent =
+      t('pause.waiting_for').replace('{names}', missing.join(', ') || who);
+    document.getElementById('pause-overlay').classList.add('show');
+    log(t('pause.body').replace('{name}', escHtml(who)).replace('{total}', lockedRoster.length), 'warn');
+  });
+
+  // game_resumed = all players back
+  sock.on('game_resumed', ({ timerSec }) => {
+    S.paused   = false;
+    S.timerSec = timerSec;
+    document.getElementById('pause-overlay').classList.remove('show');
+    log(t('pause.resumed'), 'success');
+    updateLiveScore();
+    startTimer();
+  });
+
+  // hidden_q_state = group answered a hidden bonus question
+  sock.on('hidden_q_state', ({ hqId, result }) => {
+    S.hiddenAnswers[hqId] = result;
+    // Recompute hiddenBonus total
+    S.hiddenBonus = Object.values(S.hiddenAnswers).reduce((sum, r) => sum + (r && r.bonusPts ? r.bonusPts : 0), 0);
+    updateLiveScore();
+    renderRoom();  // re-attach hq triggers with updated answered state
+    // If this player's modal for this HQ is currently open, lock it — answer is now resolved
+    if (window._currentHqId === hqId) {
+      const fb = document.getElementById('modal-feedback');
+      if (fb) {
+        fb.textContent = result.isCorrect ? t('hq.answered_correct') : t('hq.answered_wrong');
+        fb.className   = result.isCorrect ? 'ok' : 'bad';
+      }
+      // Disable all choice buttons so no late submission is possible
+      const choicesEl = document.getElementById('modal-choices');
+      if (choicesEl) choicesEl.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    }
+    // Log the outcome
+    const who = escHtml(result.answeredBy);
+    if (result.isCorrect) {
+      log(t('hq.answered_correct_log').replace('{who}', who).replace('{pts}', result.bonusPts), 'success');
+    } else {
+      log(t('hq.answered_wrong_log').replace('{who}', who), 'warn');
+    }
   });
 
   sock.on('item_found', ({ itemId, fromName }) => {
     if (S.inventory.includes(itemId)) return;
     addItem(itemId, false);
-    log(`🤝 ${fromName} found: ${ITEMS[itemId] ? ITEMS[itemId].name : itemId}`, 'hint');
+    log(t('log.item_found_other').replace('{name}', fromName).replace('{item}', t('item.' + itemId + '.name') || (ITEMS[itemId] ? ITEMS[itemId].name : itemId)), 'hint');
   });
 
   sock.on('note_added', ({ html, important }) => {
@@ -2000,17 +3047,38 @@ function connectSocket() {
     appendChat(msg.from, msg.text, msg.ts, msg.from === S.memberName);
   });
 
+  sock.on('wrong_answer_notify', ({ by, penalty, total }) => {
+    S.wrongAnswers = total;   // sync group counter
+    const msg = t('score.wrong_by')
+      .replace('{name}', escHtml(by))
+      .replace('{penalty}', penalty);
+    log(msg, 'fail');
+    updateLiveScore();
+  });
+
+  sock.on('hint_broadcast', ({ room, timeCost, ptsCost, fromName }) => {
+    // Sync hint state and penalties to other group members
+    if (!S.hintsUsed[room]) {
+      S.hintsUsed[room] = true;
+      S.hintPenalty += (ptsCost || 50);
+      S.timerSec = Math.max(0, S.timerSec - (timeCost || 60));
+      renderRoom();
+      updateLiveScore();
+      log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+    }
+  });
+
   sock.on('member_join', ({ memberName, members }) => {
     updateMembersOnline(members);
     updateLobbyMembers(members);
-    appendSystemChat(memberName + ' joined the team');
-    if (memberName !== S.memberName) log('👋 ' + memberName + ' joined your group!', 'hint');
+    appendSystemChat(t('msg.member_joined').replace('{name}', memberName));
+    if (memberName !== S.memberName) log(t('msg.member_joined').replace('{name}', memberName), 'hint');
   });
 
   sock.on('member_leave', ({ memberName, members }) => {
     updateMembersOnline(members);
     updateLobbyMembers(members);
-    appendSystemChat(memberName + ' left');
+    appendSystemChat(t('msg.member_left').replace('{name}', memberName));
   });
 
   // ── Lobby events ──────────────────────────────────────────────────────────
@@ -2018,7 +3086,7 @@ function connectSocket() {
     const bar = document.getElementById('lobby-ready-bar');
     if (bar) {
       const names = readyNames.join(', ') || '—';
-      bar.textContent = `✓ Ready: ${readyCount} / ${total}  (${names})`;
+      bar.textContent = t('lobby.ready_status').replace('{count}', readyCount).replace('{total}', total).replace('{names}', names);
     }
   });
 
@@ -2026,13 +3094,15 @@ function connectSocket() {
     doStartGame(timerSec);
   });
 
-  sock.on('lobby_error', ({ message }) => {
+  sock.on('lobby_error', ({ message, code, required, online }) => {
+    let msg = message || '';
+    if (code === 'wrong_count') msg = t('lobby.wrong_count').replace('{required}', required).replace('{online}', online);
+    else if (code === 'too_many') msg = t('lobby.too_many').replace('{required}', required).replace('{online}', online);
     const el = document.getElementById('lobby-error-msg');
-    if (el) el.textContent = message;
-    // Re-enable the begin button so player can try again
+    if (el) el.textContent = msg;
     const btn = document.getElementById('start-btn');
     btn.disabled = false;
-    btn.textContent = 'BEGIN AUDIT SIMULATION';
+    btn.textContent = t('login.demo_start_btn');
     document.getElementById('start-waiting').style.display = 'none';
   });
 
@@ -2043,135 +3113,113 @@ function connectSocket() {
     showEndScreen(data.won, data);
   });
 
-  // ── Collaborative code events ─────────────────────────────────────────────
-  sock.on('code_revealed', ({ puzzleKey, code, fromName, label, required, confirmed: confirmedCount }) => {
-    appendSystemChat(`🔑 ${fromName} found: ${label}`);
-    if (fromName === S.memberName) {
-      const fb = document.getElementById('modal-feedback');
-      fb.className = 'ok';
-      fb.textContent = `✓ Correct! Waiting for team (${confirmedCount}/${required} confirmed)…`;
-      document.getElementById('modal-submit').disabled = true;
-      log(`🔑 You found the code for "${label}" — waiting for ${required - confirmedCount} more teammate(s).`, 'hint');
-    } else {
-      showTeamConfirm({ puzzleKey, code, fromName, label, required, confirmedCount });
-      log(`🔑 ${escHtml(fromName)} found the answer to "${label}" — enter the code to confirm!`, 'warn');
-    }
-  });
-
-  sock.on('confirm_progress', ({ puzzleKey, count, required, fromName }) => {
-    if (fromName !== S.memberName) appendSystemChat(`✓ ${fromName} confirmed (${count}/${required})`);
-    if (window._tcPuzzleKey === puzzleKey) {
-      document.getElementById('tc-progress').textContent = `✓ ${count} / ${required} members confirmed`;
-    }
-    const fb = document.getElementById('modal-feedback');
-    if (fb && fb.textContent.includes('Waiting for team')) {
-      fb.textContent = `✓ Waiting for team (${count}/${required} confirmed)…`;
-    }
-  });
-
-  sock.on('puzzle_complete', ({ puzzleKey, puzzlesDone: pd }) => {
-    closeTeamConfirm();
-    if (S.solved[puzzleKey]) return;
-    S.puzzlesDone = Math.max(S.puzzlesDone, pd);
-    if (puzzleKey === 'coa_verified') {
-      S.solved.coa_verified = true;
-      updateProgress(); closeModal();
-      log('✓ ALL MEMBERS CONFIRMED — Lot RM-4471 released from HOLD. Production line accessible.', 'success');
-      log('📚 Quality Fact: GMP requires every incoming material to have an approved CoA on file before it can be used in production.', 'fact');
-      renderNav(); renderRoom();
-    } else if (puzzleKey === 'game_won') {
-      S.solved.game_won = true;
-      updateProgress(); closeModal();
-      log('✓ ALL MEMBERS CONFIRMED BATCH DISPOSITION — Final authorisation complete!', 'success');
-      triggerWin();
-    }
-  });
 
   sock.on('kicked', ({ reason }) => {
-    alert('Admin action: ' + reason + '\nPlease refresh and login again.');
+    alert(t('msg.kicked').replace('{reason}', reason));
     location.reload();
   });
 
   sock.on('disconnect', () => {
     document.getElementById('chat-input').disabled    = true;
-    document.getElementById('chat-input').placeholder = 'Reconnecting…';
+    document.getElementById('chat-input').placeholder = t('chat.reconnecting');
+  });
+
+  // iOS Safari: re-connect when tab becomes visible again after being hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !sock.connected) {
+      sock.connect();
+    }
   });
 }
 
-// ── Team Confirmation Helpers ─────────────────────────────────────────────
-window._tcPuzzleKey = null;
-
-function showTeamConfirm({ puzzleKey, code, fromName, label, required, confirmedCount }) {
-  window._tcPuzzleKey = puzzleKey;
-  document.getElementById('tc-title').textContent = label;
-  document.getElementById('tc-body').innerHTML =
-    `<strong>${escHtml(fromName)}</strong> found the answer. All ${required} members must enter this code to proceed:`;
-  document.getElementById('tc-code-display').textContent = code;
-  document.getElementById('tc-input').value = '';
-  document.getElementById('tc-input').disabled = false;
-  document.getElementById('tc-feedback').textContent = '';
-  document.getElementById('tc-feedback').className = '';
-  document.getElementById('tc-progress').textContent = `${confirmedCount} / ${required} members confirmed`;
-  document.getElementById('tc-submit').disabled = false;
-  document.getElementById('team-confirm-overlay').classList.add('show');
-  setTimeout(() => document.getElementById('tc-input').focus(), 60);
-}
-
-function closeTeamConfirm() {
-  document.getElementById('team-confirm-overlay').classList.remove('show');
-  window._tcPuzzleKey = null;
-}
-
-document.getElementById('tc-submit').onclick = () => {
-  const puzzleKey = window._tcPuzzleKey;
-  if (!puzzleKey || !S.socket) return;
-  const inp = document.getElementById('tc-input');
-  const val = inp.value.trim().toUpperCase().replace(/[-\s]/g, '');
-  const code = document.getElementById('tc-code-display').textContent;
-  const expected = code.toUpperCase().replace(/[-\s]/g, '');
-  if (val === expected) {
-    document.getElementById('tc-feedback').textContent = '✓ Confirmed! Waiting for remaining teammates…';
-    document.getElementById('tc-feedback').className = 'ok';
-    document.getElementById('tc-submit').disabled = true;
-    inp.disabled = true;
-    S.socket.emit('confirm_code', { puzzleKey, code });
+// Helper: record my personal puzzle completion and notify server
+function myPuzzleComplete(key, demoAfterFn) {
+  S.mySolved[key] = true;
+  window._currentPuzzleKey = null;
+  if (S.socket && !S.demoMode) {
+    S.socket.emit('player_puzzle_done', { key, puzzlesDone: S.puzzlesDone });
+    setFeedback(t('msg.your_task_done'), 'ok');
+    const sub = document.getElementById('modal-submit');
+    if (sub) sub.disabled = true;
+    // Remove modal choices to prevent re-submission
+    const ch = document.getElementById('modal-choices');
+    if (ch) ch.innerHTML = '';
   } else {
-    document.getElementById('tc-feedback').textContent = 'Incorrect — enter the code exactly as shown above.';
-    document.getElementById('tc-feedback').className = 'bad';
-    S.wrongAnswers++;
-    if (S.socket) S.socket.emit('wrong_answer');
+    // Demo / no-socket: complete immediately
+    S.solved[key] = true;
+    puzzleDone();
+    closeModal();
+    if (demoAfterFn) demoAfterFn();
   }
-};
-
-document.getElementById('tc-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('tc-submit').click();
-});
+}
 
 function applyServerState(state) {
   if (!state) return;
-  if (state.solved)   Object.entries(state.solved).forEach(([k, v]) => { if (v) S.solved[k] = true; });
+  if (state.solved) Object.entries(state.solved).forEach(([k, v]) => {
+    if (v) {
+      S.solved[k]   = true;
+      // Group-complete means every roster member did it — credit me too to keep mySolved in sync
+      S.mySolved[k] = true;
+    }
+  });
+  if (state.playerSolved) Object.entries(state.playerSolved).forEach(([k, v]) => { if (v) S.mySolved[k] = true; });
+  if (state.hiddenAnswers) {
+    S.hiddenAnswers = { ...state.hiddenAnswers };
+    S.hiddenBonus   = Object.values(S.hiddenAnswers).reduce((sum, r) => sum + (r && r.bonusPts ? r.bonusPts : 0), 0);
+  }
+  if (state.lockedRoster) S.lockedRoster = state.lockedRoster;
+  if (state.groupSize)    S.requiredSize  = state.groupSize;
   if (state.inventory) state.inventory.forEach(id => { if (!S.inventory.includes(id)) S.inventory.push(id); });
   if (state.notes && state.notes.length) S.notes = [...state.notes];
-  if (state.puzzlesDone !== undefined)   S.puzzlesDone = Math.max(S.puzzlesDone, state.puzzlesDone);
-  if (state.timerSec   !== undefined)    S.timerSec    = state.timerSec;
+  if (state.puzzlesDone  !== undefined)  S.puzzlesDone  = Math.max(S.puzzlesDone, state.puzzlesDone);
+  if (state.wrongAnswers !== undefined)  S.wrongAnswers = Math.max(S.wrongAnswers, state.wrongAnswers);
+  if (state.hintPenalty  !== undefined)  S.hintPenalty  = Math.max(S.hintPenalty, state.hintPenalty);
+  if (Array.isArray(state.hintsUsed)) state.hintsUsed.forEach(r => { S.hintsUsed[r] = true; });
+  if (state.timerSec     !== undefined)  S.timerSec     = state.timerSec;
+  if (state.resumed      !== undefined)  S.resumed      = !!state.resumed;
+  // Restore pause state
+  if (state.paused) {
+    S.paused = true;
+    document.getElementById('pause-overlay').classList.add('show');
+  }
   renderInventory(); renderNotes(); renderNav(); updateProgress();
-  const m = Math.floor(S.timerSec / 60), s = S.timerSec % 60;
-  document.getElementById('timer').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  // Update timer display accounting for overtime
+  const el = document.getElementById('timer');
+  if (S.timerSec >= OT_THRESH_CLIENT) {
+    const regLeft = S.timerSec - OT_THRESH_CLIENT;
+    el.textContent = String(Math.floor(regLeft/60)).padStart(2,'0') + ':' + String(regLeft%60).padStart(2,'0');
+    el.classList.remove('overtime');
+  } else {
+    const otSec = OT_THRESH_CLIENT - S.timerSec;
+    el.textContent = 'OT +' + String(Math.floor(otSec/60)).padStart(2,'0') + ':' + String(otSec%60).padStart(2,'0');
+    el.classList.add('overtime');
+  }
 }
 
 function updateMembersOnline(members) {
   const el = document.getElementById('members-online');
-  if (el) el.textContent = members.length + ' online';
+  if (el) el.textContent = t('members.online').replace('{n}', members.length);
 }
 
 function updateLobbyMembers(members) {
   const el = document.getElementById('lobby-members');
   if (!el) return;
-  const count = members.length;
-  const names = members.join(', ') || '—';
-  const statusColor = count >= 3 ? 'var(--accent2)' : 'var(--warn)';
-  el.innerHTML = `<span style="color:${statusColor};">${count}/5 connected</span> &nbsp;— ${escHtml(names)}<br>`
-    + `<span style="font-size:0.72rem;color:var(--dim);">${count < 3 ? 'Need at least 3 members to start.' : count < 5 ? 'Waiting for all members to click ready.' : 'All 5 members connected!'}</span>`;
+  const count  = members.length;
+  const req    = S.requiredSize || 0;
+  const names  = members.join(', ') || '—';
+  const needed = req > 0 ? req - count : 0;
+  const statusColor = (req > 0 ? count >= req : count >= 3) ? 'var(--accent2)' : 'var(--warn)';
+  let statusMsg;
+  if (req > 0) {
+    statusMsg = needed > 0
+      ? t('lobby.need_exact').replace('{needed}', needed)
+      : t('lobby.all_ready');
+  } else {
+    statusMsg = count < 3 ? t('lobby.need_3') : count < 5 ? t('lobby.waiting_ready') : t('lobby.all_5');
+  }
+  el.innerHTML = `<span style="color:${statusColor};">${count}${req > 0 ? '/'+req : ''} ${t('lobby.connected_of')}</span> &nbsp;— ${escHtml(names)}<br>`
+    + `<span style="font-size:0.72rem;color:var(--dim);">${statusMsg}</span>`;
+  S.membersOnline = members;
 }
 
 // ── Chat helpers ────────────────────────────────
@@ -2216,3 +3264,4 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
 </script>
 </body>
 </html>
+
