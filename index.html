@@ -1816,9 +1816,9 @@ function handleAction(action) {
         submitLabel: t('btn.apply_correction'),
         puzzleKey: 'calibration_done',
         onSubmit: val => {
-          const v = val.trim().replace(/\s/g, '');
-          // Accept -0.03, 0.03, -.03, -0.030 etc.
-          if (v === '-0.03' || v === '0.03' || v === '-0.030' || v === '-.03') {
+          const v = val.trim().replace(/\s/g, '').replace(',', '.');
+          // Only accept +0.03 — the instrument reads 0.03 mm too HIGH (12.53 − 12.50)
+          if (v === '0.03' || v === '+0.03' || v === '0.030' || v === '+0.030' || v === '.03') {
             myPuzzleComplete('calibration_done', () => {
               log(t('msg.cal_log'), 'success');
               log(t('msg.cal_fact'), 'fact');
