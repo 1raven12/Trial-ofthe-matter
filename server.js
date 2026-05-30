@@ -407,6 +407,18 @@ app.get('/api/admin/groups', requireAdmin, (req, res) => {
   const data = load();
   const groups = data.groups.map(g => {
     const sess = groupSessions.get(g.id);
+    const secsLeft = calcSecsRemaining(g.id);
+    const liveScore = (g.status === 'playing' && sess)
+      ? calcScore({
+          puzzlesDone:  sess.puzzlesDone  || 0,
+          wrongAnswers: sess.wrongAnswers || 0,
+          hintPenalty:  g.hintPenalty    || 0,
+          timerSec:     secsLeft,
+          won:          false,
+          resumed:      !!g.resumed,
+          hiddenBonus:  0,
+        })
+      : null;
     return {
       ...g,
       liveMembers:      getOnlineMembers(g.id).length,
@@ -415,6 +427,8 @@ app.get('/api/admin/groups', requireAdmin, (req, res) => {
       livePlayerSolved: sess ? (sess.playerSolved || {}) : {},
       livePuzzles:      sess ? sess.puzzlesDone : (g.puzzlesDone || 0),
       liveWrong:        sess ? sess.wrongAnswers : (g.wrongAnswers || 0),
+      liveScore,
+      liveSecsLeft:     g.status === 'playing' ? secsLeft : null,
     };
   });
   res.json(groups);
