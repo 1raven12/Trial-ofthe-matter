@@ -1453,13 +1453,14 @@ const ROOMS = {
     id: 'qclab', badge: 'AREA 03 — QC LABORATORY',
     name: 'Quality Control Laboratory',
     emoji: '🔬',
-    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY." The ISO 15378 packaging compliance file sits on the far bench. Above the bench, the site motto is printed in bold: "Progress in every step · Quality in every detail."',
+    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY." The ISO 15378 packaging compliance file sits on the far bench. A maintenance log from Station 3 is open on the side bench — it looks like it was pulled during the investigation. Above the bench, the site motto is printed in bold: "Progress in every step · Quality in every detail."',
     hotspots: [
       { label: 'Calibration Reference Cabinet',      action: 'open_cal_cabinet'    },
       { label: 'Micrometer Station',                 action: 'use_micrometer'      },
       { label: 'SOP Document Rack',                  action: 'check_sop_rack'      },
       { label: 'Equipment Logbook',                  action: 'check_equip_log'     },
       { label: 'ISO 15378 Packaging Compliance File', action: 'check_iso15378'     },
+      { label: 'Maintenance Log (Side Bench)',        action: 'read_maint_log'      },
     ],
     hiddenSpots: [
       { emoji: '🌳', action: 'find_hq_qclab_1',    trigger: 'room-title'      },
@@ -1470,9 +1471,8 @@ const ROOMS = {
     id: 'qaoffice', badge: 'AREA 04 — QA / COMPLIANCE',
     name: 'QA & Compliance Office',
     emoji: '🗂️',
-    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." A maintenance log has been left open on the side table — someone was in a hurry. An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 + ISO 15378 verification to unlock. A framed quality pledge on the wall reads: "Progress in every step · Quality in every detail — We own our processes."',
+    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 + ISO 15378 verification to unlock. A framed quality pledge on the wall reads: "Progress in every step · Quality in every detail — We own our processes."',
     hotspots: [
-      { label: 'Maintenance Log (Side Table)', action: 'read_maint_log'       },
       { label: 'CAPA Workstation',             action: 'use_capa_station'     },
       { label: 'ISO 13485 Filing Cabinet',     action: 'check_iso_files'      },
       { label: 'ISO 9001 Management Review',   action: 'check_iso9001'        },
