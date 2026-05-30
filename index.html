@@ -634,7 +634,7 @@
     </div>
     <div class="lf">
       <label data-t="login.group_pin">Group PIN</label>
-      <input type="password" id="group-pin" data-t-ph="login.enter_pin" placeholder="Enter your group PIN" maxlength="10" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+      <input type="password" id="group-pin" data-t-ph="login.enter_pin" placeholder="Enter your group PIN" maxlength="10" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" />
     </div>
     <div class="lf">
       <label data-t="login.group_size">How many people are in your group?</label>
@@ -659,7 +659,7 @@
     <div id="demo-pw-box" style="display:none;margin-top:12px;text-align:left;">
       <div class="lf" style="margin-bottom:8px;">
         <label data-t="login.admin_pw_label">Admin Password (required for Demo)</label>
-        <input type="password" id="demo-pw-input" data-t-ph="login.admin_pw_ph" placeholder="Enter admin password" maxlength="60" />
+        <input type="password" id="demo-pw-input" data-t-ph="login.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="new-password" />
       </div>
       <div id="demo-pw-error" style="color:var(--danger);font-size:0.75rem;min-height:16px;margin-bottom:6px;"></div>
       <button class="btn primary" id="demo-pw-btn" data-t="login.demo_btn" style="width:100%;">Enter Demo Mode</button>
@@ -674,7 +674,7 @@
     <div id="lb-pw-section">
       <div class="lf" style="margin-bottom:6px;">
         <label data-t="lb.admin_pw">Admin Password</label>
-        <input type="password" id="lb-pw-input" data-t-ph="lb.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="off" />
+        <input type="password" id="lb-pw-input" data-t-ph="lb.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="new-password" />
       </div>
       <div id="lb-pw-error"></div>
       <div style="display:flex;gap:8px;">
@@ -1156,6 +1156,11 @@ async function submitScore(won) {
 // LOGIN INIT
 // ────────────────────────────────────────────────
 async function initLogin() {
+  // Prevent browser autofill from leaking a previous PIN into a fresh session
+  document.getElementById('group-pin').value     = '';
+  document.getElementById('demo-pw-input').value = '';
+  document.getElementById('lb-pw-input').value   = '';
+
   const sel = document.getElementById('group-select');
   const err = document.getElementById('login-error');
   const retryBtn = document.getElementById('groups-retry-btn');
