@@ -5495,6 +5495,51 @@
           "timeSpentSec": 2,
           "completedAt": "2026-05-29T16:53:33.159Z",
           "resumed": false
+        },
+        {
+          "trialNumber": 9,
+          "score": 5746,
+          "puzzlesDone": 11,
+          "wrongAnswers": 1,
+          "hintPenalty": 0,
+          "hiddenFound": 0,
+          "hiddenCorrect": 0,
+          "hiddenBonus": 0,
+          "won": true,
+          "secondsRemaining": 3598,
+          "timeSpentSec": 2,
+          "completedAt": "2026-05-30T09:19:07.646Z",
+          "resumed": false
+        },
+        {
+          "trialNumber": 10,
+          "score": 5746,
+          "puzzlesDone": 11,
+          "wrongAnswers": 1,
+          "hintPenalty": 0,
+          "hiddenFound": 0,
+          "hiddenCorrect": 0,
+          "hiddenBonus": 0,
+          "won": true,
+          "secondsRemaining": 3598,
+          "timeSpentSec": 2,
+          "completedAt": "2026-05-30T09:21:35.742Z",
+          "resumed": false
+        },
+        {
+          "trialNumber": 11,
+          "score": 5746,
+          "puzzlesDone": 11,
+          "wrongAnswers": 1,
+          "hintPenalty": 0,
+          "hiddenFound": 0,
+          "hiddenCorrect": 0,
+          "hiddenBonus": 0,
+          "won": true,
+          "secondsRemaining": 3598,
+          "timeSpentSec": 2,
+          "completedAt": "2026-05-30T09:22:04.177Z",
+          "resumed": false
         }
       ]
     }
