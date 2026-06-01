@@ -219,7 +219,7 @@
 
   <div id="admin-login-form">
     <label>Admin Password</label>
-    <input type="password" id="admin-pw" placeholder="Enter admin password" />
+    <input type="password" id="admin-pw" placeholder="Enter admin password" autocomplete="new-password" />
     <div id="admin-error"></div>
     <button class="btn primary" id="admin-login-btn">Login as Admin</button>
   </div>
@@ -421,7 +421,7 @@ async function loadAdminGroups() {
         <td><strong>${escHtml(g.name)}</strong>${trialBadge}${lockedBadge}</td>
         <td class="pin-cell">${g.pin}</td>
         <td>${statusBadge(g.status, g.resumed)}${pausedBadge}</td>
-        <td>${g.score !== null && g.score !== undefined ? (g.score).toLocaleString() + ' pts' : (g.livePuzzles > 0 ? `~live ${g.livePuzzles}★` : '—')}</td>
+        <td>${g.score !== null && g.score !== undefined ? (g.score).toLocaleString() + ' pts' : (g.liveScore !== null && g.liveScore !== undefined ? `~${g.liveScore.toLocaleString()} pts (live)` : '—')}</td>
         <td>${(g.livePuzzles||g.puzzlesDone||0)}/11</td>
         <td style="color:var(--danger)">${g.liveWrong || g.wrongAnswers || 0}</td>
         <td style="color:var(--dim)">${g.requiredSize || '—'}</td>
@@ -499,6 +499,8 @@ document.getElementById('admin-login-btn').onclick = async () => {
 document.getElementById('admin-pw').onkeydown = e => {
   if (e.key === 'Enter') document.getElementById('admin-login-btn').click();
 };
+// Prevent browser autofill from pre-populating the password field
+document.getElementById('admin-pw').value = '';
 
 // ── If already have admin token ────────────────────────────────────────────
 if (adminToken) {
