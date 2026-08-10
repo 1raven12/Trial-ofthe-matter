@@ -59,11 +59,24 @@ function run(args, label) {
   return { clean, passed, total, failed, secs, reasons: clean ? undefined : reasons };
 }
 
+/**
+ * Return data/groups.json to its committed baseline.
+ * The suites rewrite it as part of the 256-group simulation, which otherwise
+ * leaves the working tree permanently dirty and each attempt starting from
+ * whatever the previous one happened to leave behind. Restoring between
+ * attempts also makes every attempt start from identical state.
+ */
+function restoreData() {
+  const r = spawnSync('git', ['checkout', '--', 'data/groups.json'], { cwd: ROOT, encoding: 'utf8' });
+  if (r.status !== 0) process.stdout.write(`    (could not restore data/groups.json: ${(r.stderr || '').trim()})\n`);
+}
+
 function certify(name, args) {
   let streak = 0, attempts = 0;
   const history = [];
   while (streak < TARGET && attempts < MAX_TRIES) {
     attempts++;
+    restoreData();
     const r = run(args, `attempt ${attempts} (streak ${streak}/${TARGET})`);
     history.push({ attempt: attempts, ...r, clean: r.clean });
     if (r.clean) streak++;
@@ -131,5 +144,6 @@ function certify(name, args) {
   process.stdout.write(`\n  TOTAL COUNTED CLEAN PASSES: ${totalClean}\n`);
   process.stdout.write(`  ledger → ${path.relative(ROOT, LEDGER)}\n`);
   process.stdout.write(`${'█'.repeat(66)}\n`);
+  restoreData();   // leave the working tree as we found it
   process.exitCode = allCertified ? 0 : 1;
 })();
