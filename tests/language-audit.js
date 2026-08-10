@@ -364,53 +364,101 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
 
   // ── G. scoring model: mistakes and time stay separate ─────────────────────
   sec(`G. scoring model — ${lang}`);
+  // The full required matrix: every combination of {no/some/many mistakes} ×
+  // {no/some hints} × {early, exact, overtime}, plus both boundaries. Each case
+  // states its own component expectations so a wrong score cannot be explained
+  // away by a compensating error elsewhere.
+  const EXACT = OT_THRESH;            // elapsed == allowed duration
+  const EARLY = OT_THRESH + 600;      // 10 min early
+  const LATE  = OT_THRESH - 480;      // 8 min overtime
   const CASES = [
-    { n: 'G1  0 mistakes, exactly on time',   a: { puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: OT_THRESH, won: true }, ot: 0, mp: 0,   eb: 0 },
-    { n: 'G2  3 mistakes, exactly on time',   a: { puzzlesDone: SCORED, wrongAnswers: 3, hintPenalty: 0, timerSec: OT_THRESH, won: true }, ot: 0, mp: 150, eb: 0 },
-    { n: 'G3  0 mistakes, 10 min early',      a: { puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: OT_THRESH + 600, won: true }, ot: 0, mp: 0,   eb: 1200 },
-    { n: 'G4  5 mistakes, 10 min early',      a: { puzzlesDone: SCORED, wrongAnswers: 5, hintPenalty: 0, timerSec: OT_THRESH + 600, won: true }, ot: 0, mp: 250, eb: 1200 },
-    { n: 'G5  0 mistakes, 8 min overtime',    a: { puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: OT_THRESH - 480, won: true }, ot: 240, mp: 0,   eb: 0 },
-    { n: 'G6  5 mistakes, 8 min overtime',    a: { puzzlesDone: SCORED, wrongAnswers: 5, hintPenalty: 0, timerSec: OT_THRESH - 480, won: true }, ot: 240, mp: 250, eb: 0 },
-    { n: 'G7  many mistakes + early finish',  a: { puzzlesDone: SCORED, wrongAnswers: 12, hintPenalty: 0, timerSec: OT_THRESH + 600, won: true }, ot: 0, mp: 600, eb: 1200 },
-    { n: 'G8  boundary: 1 s inside time',     a: { puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: OT_THRESH + 1, won: true }, ot: 0, mp: 0, eb: 2 },
-    { n: 'G9  boundary: 1 s overtime',        a: { puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: OT_THRESH - 1, won: true }, ot: 30, mp: 0, eb: 0 },
-    { n: 'G10 hard stop, 6 mistakes',         a: { puzzlesDone: SCORED, wrongAnswers: 6, hintPenalty: 0, timerSec: 0, won: false }, ot: 900, mp: 300, eb: 0 },
-  ];
+    { n: 'G1  no mistakes, no hints, exact time',      a: { wrongAnswers: 0,  hintPenalty: 0,   timerSec: EXACT }, ot: 0,   mp: 0,   hp: 0,   eb: 0 },
+    { n: 'G2  mistakes, no hints, exact time',         a: { wrongAnswers: 3,  hintPenalty: 0,   timerSec: EXACT }, ot: 0,   mp: 150, hp: 0,   eb: 0 },
+    { n: 'G3  hints, no mistakes, exact time',         a: { wrongAnswers: 0,  hintPenalty: 100, timerSec: EXACT }, ot: 0,   mp: 0,   hp: 100, eb: 0 },
+    { n: 'G4  mistakes + hints, exact time',           a: { wrongAnswers: 3,  hintPenalty: 100, timerSec: EXACT }, ot: 0,   mp: 150, hp: 100, eb: 0 },
+    { n: 'G5  no mistakes, no hints, early finish',    a: { wrongAnswers: 0,  hintPenalty: 0,   timerSec: EARLY }, ot: 0,   mp: 0,   hp: 0,   eb: 1200 },
+    { n: 'G6  mistakes + early finish',                a: { wrongAnswers: 5,  hintPenalty: 0,   timerSec: EARLY }, ot: 0,   mp: 250, hp: 0,   eb: 1200 },
+    { n: 'G7  hints + early finish',                   a: { wrongAnswers: 0,  hintPenalty: 150, timerSec: EARLY }, ot: 0,   mp: 0,   hp: 150, eb: 1200 },
+    { n: 'G8  mistakes + hints + early finish',        a: { wrongAnswers: 5,  hintPenalty: 150, timerSec: EARLY }, ot: 0,   mp: 250, hp: 150, eb: 1200 },
+    { n: 'G9  no mistakes, no hints, overtime',        a: { wrongAnswers: 0,  hintPenalty: 0,   timerSec: LATE  }, ot: 240, mp: 0,   hp: 0,   eb: 0 },
+    { n: 'G10 mistakes + overtime',                    a: { wrongAnswers: 5,  hintPenalty: 0,   timerSec: LATE  }, ot: 240, mp: 250, hp: 0,   eb: 0 },
+    { n: 'G11 hints + overtime',                       a: { wrongAnswers: 0,  hintPenalty: 150, timerSec: LATE  }, ot: 240, mp: 0,   hp: 150, eb: 0 },
+    { n: 'G12 mistakes + hints + overtime',            a: { wrongAnswers: 5,  hintPenalty: 150, timerSec: LATE  }, ot: 240, mp: 250, hp: 150, eb: 0 },
+    { n: 'G13 many mistakes, very early finish',       a: { wrongAnswers: 12, hintPenalty: 0,   timerSec: EARLY }, ot: 0,   mp: 600, hp: 0,   eb: 1200 },
+    { n: 'G14 many hints, early finish',               a: { wrongAnswers: 0,  hintPenalty: 250, timerSec: EARLY }, ot: 0,   mp: 0,   hp: 250, eb: 1200 },
+    { n: 'G15 boundary: 1 s inside the limit',         a: { wrongAnswers: 0,  hintPenalty: 0,   timerSec: OT_THRESH + 1 }, ot: 0,  mp: 0, hp: 0, eb: 2 },
+    { n: 'G16 boundary: 1 s past the limit',           a: { wrongAnswers: 0,  hintPenalty: 0,   timerSec: OT_THRESH - 1 }, ot: 30, mp: 0, hp: 0, eb: 0 },
+    { n: 'G17 hard stop, mistakes and hints',          a: { wrongAnswers: 6,  hintPenalty: 100, timerSec: 0, won: false },  ot: 900, mp: 300, hp: 100, eb: 0 },
+  ].map(c => ({ ...c, a: { puzzlesDone: SCORED, won: true, ...c.a } }));
+
   for (const c of CASES) {
-    const isOT   = c.a.timerSec < OT_THRESH;
-    const ptPer  = isOT ? 180 : 200;
-    const want   = Math.max(0, c.a.puzzlesDone * ptPer + c.eb - c.mp - c.ot);
-    const got    = calcScore(c.a);
-    const otOK   = (isOT ? Math.ceil((OT_THRESH - c.a.timerSec) / 60) * 30 : 0) === c.ot;
-    const mpOK   = c.a.wrongAnswers * WRONG_PTS === c.mp;
-    if (got === want && otOK && mpOK) {
-      ok(`${c.n} → ${got}  (mistakes −${c.mp}, early +${c.eb}, overtime −${c.ot})`);
+    const isOT  = c.a.timerSec < OT_THRESH;
+    const ptPer = isOT ? 180 : 200;
+    const want  = Math.max(0, c.a.puzzlesDone * ptPer + c.eb - c.mp - c.hp - c.ot);
+    const got   = calcScore(c.a);
+    // Assert every component independently, not just the total.
+    const otCalc    = isOT ? Math.ceil((OT_THRESH - c.a.timerSec) / 60) * 30 : 0;
+    const earlyCalc = (c.a.won && !isOT) ? (c.a.timerSec - OT_THRESH) * 2 : 0;
+    const mpCalc    = c.a.wrongAnswers * WRONG_PTS;
+    const hpCalc    = c.a.hintPenalty;
+    const bad = [];
+    if (got !== want)      bad.push(`score exp=${want} got=${got}`);
+    if (otCalc !== c.ot)   bad.push(`timePenalty exp=${c.ot} got=${otCalc}`);
+    if (earlyCalc !== c.eb) bad.push(`earlyReward exp=${c.eb} got=${earlyCalc}`);
+    if (mpCalc !== c.mp)   bad.push(`mistakePenalty exp=${c.mp} got=${mpCalc}`);
+    if (hpCalc !== c.hp)   bad.push(`hintPenalty exp=${c.hp} got=${hpCalc}`);
+    if (!bad.length) {
+      ok(`${c.n} → ${got}  (base ${c.a.puzzlesDone}×${ptPer}, mistakes −${c.mp}, hints −${c.hp}, early +${c.eb}, overtime −${c.ot})`);
     } else {
-      ko(c.n, `score exp=${want} got=${got}; overtime exp=${c.ot} calc=${isOT ? Math.ceil((OT_THRESH-c.a.timerSec)/60)*30 : 0}; mistakePenalty exp=${c.mp} calc=${c.a.wrongAnswers*WRONG_PTS}`);
+      ko(c.n, bad.join('; '));
     }
   }
 
   // mistakes must never become time, time must never absorb mistakes
   const base   = calcScore({ puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: 3000, won: true });
   const with6  = calcScore({ puzzlesDone: SCORED, wrongAnswers: 6, hintPenalty: 0, timerSec: 3000, won: true });
-  if (base - with6 === 6 * WRONG_PTS) ok(`G11 6 mistakes cost exactly ${6 * WRONG_PTS}; early bonus unchanged`);
-  else ko('G11 mistake/time bleed', `delta ${base - with6}`);
+  if (base - with6 === 6 * WRONG_PTS) ok(`G20 6 mistakes cost exactly ${6 * WRONG_PTS}; early bonus unchanged`);
+  else ko('G20 mistake/time bleed', `delta ${base - with6}`);
 
   const early = calcScore({ puzzlesDone: SCORED, wrongAnswers: 4, hintPenalty: 0, timerSec: 3000, won: true });
   const late  = calcScore({ puzzlesDone: SCORED, wrongAnswers: 4, hintPenalty: 0, timerSec: 1200, won: true });
   const eNo   = calcScore({ puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: 3000, won: true });
   const lNo   = calcScore({ puzzlesDone: SCORED, wrongAnswers: 0, hintPenalty: 0, timerSec: 1200, won: true });
   if (eNo - early === 4 * WRONG_PTS && lNo - late === 4 * WRONG_PTS)
-    ok('G12 mistake penalty identical early and in overtime — dimensions independent');
-  else ko('G12 mistake penalty varies with timing', `early=${eNo - early} late=${lNo - late}`);
+    ok('G21 mistake penalty identical early and in overtime — dimensions independent');
+  else ko('G21 mistake penalty varies with timing', `early=${eNo - early} late=${lNo - late}`);
 
   // the original defect: many mistakes + early finish must not show overtime
   const bug = { puzzlesDone: SCORED, wrongAnswers: 5, hintPenalty: 5 * HINT_PTS, timerSec: 2000, won: true };
   const bugScore = calcScore(bug);
   const staleClient = calcScore({ ...bug, timerSec: 2000 - 5 * 60 }); // pre-fix client clock
   if (bug.timerSec >= OT_THRESH && bugScore > staleClient)
-    ok(`G13 regression: 5 mistakes + early finish → no overtime penalty (${bugScore}; stale client would show ${staleClient})`);
-  else ko('G13 mistakes leaking into overtime', `score=${bugScore} stale=${staleClient}`);
+    ok(`G22 regression: 5 mistakes + early finish → no overtime penalty (${bugScore}; stale client would show ${staleClient})`);
+  else ko('G22 mistakes leaking into overtime', `score=${bugScore} stale=${staleClient}`);
+
+  // G18/G19: the two required cases that need the server, not the formula —
+  // a completion submitted twice, and a completed result re-read after a reload.
+  {
+    const before = (await get('/api/leaderboard', tok)).body.find(r => r.groupId === TRIAL);
+    const t = await loginTrial();
+    const dup = await post('/api/game/submit', { won: true }, t);
+    const after = (await get('/api/leaderboard', tok)).body.find(r => r.groupId === TRIAL);
+    // A duplicate submission must not add a row, and must not invent a result.
+    const rows = (await get('/api/leaderboard', tok)).body.filter(r => r.groupId === TRIAL).length;
+    if (rows === 1 && after.score === before.score) {
+      ok(`G18 duplicate completion request leaves the single record unchanged (${before.score}, HTTP ${dup.status})`);
+    } else {
+      ko('G18 duplicate completion altered the record', `rows=${rows} before=${before.score} after=${after.score}`);
+    }
+
+    // Re-read from disk: the persisted result must survive a reload untouched.
+    const disk = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).groups.find(g => g.id === TRIAL);
+    const api  = (await get('/api/leaderboard', tok)).body.find(r => r.groupId === TRIAL);
+    const same = disk.score === api.score && disk.wrongAnswers === api.mistakes
+              && (disk.hintPenalty || 0) === api.hintPenalty && disk.timeSpentSec === api.durationSec;
+    if (same) ok('G19 persisted result matches the served result after reload (score, mistakes, hints, duration)');
+    else ko('G19 persisted vs served drift', `disk=${JSON.stringify({s:disk.score,m:disk.wrongAnswers,h:disk.hintPenalty,d:disk.timeSpentSec})} api=${JSON.stringify({s:api.score,m:api.mistakes,h:api.hintPenalty,d:api.durationSec})}`);
+  }
 
   // ── H. scoring is locale-independent ──────────────────────────────────────
   sec(`H. locale independence — ${lang}`);
