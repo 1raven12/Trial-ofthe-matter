@@ -228,8 +228,9 @@
 
     <!-- ── Leaderboard ── -->
     <section id="leaderboard-section" style="margin-bottom:28px;">
-      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Live Leaderboard — All Trials</h2>
-      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">Each group trial is shown as a separate row. Sorted by score (highest first). Ties broken by earliest completion time.</p>
+      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Official Leaderboard — One Result Per Group</h2>
+      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">All 256 groups. Groups 1&ndash;255 show their first official result until an admin reset; Group&nbsp;256 shows its latest. Ranked by score, then fewer mistakes, fewer hints, shorter duration, earlier finish. Groups that have not played are listed last and are not ranked.</p>
+      <div id="lb-summary" style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;"></div>
       <table class="lb-table">
         <thead>
           <tr>
@@ -237,11 +238,16 @@
             <th>Group</th>
             <th>Score</th>
             <th>Puzzles</th>
-            <th>Time Spent</th>
-            <th>Wrong</th>
+            <th>Duration</th>
+            <th>Mistakes</th>
+            <th>Mistake&nbsp;pen.</th>
             <th>Hints</th>
+            <th>Hint&nbsp;pen.</th>
+            <th>Early&nbsp;finish</th>
+            <th>Overtime</th>
+            <th>Time&nbsp;pen.</th>
             <th>Status</th>
-            <th>Finished At</th>
+            <th>Completed</th>
           </tr>
         </thead>
         <tbody id="lb-body"></tbody>
@@ -372,28 +378,47 @@ async function loadLeaderboard() {
     const tbody = document.getElementById('lb-body');
 
     if (!board.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="no-data">No groups have completed the game yet. 🏁</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="14" class="no-data">No groups configured. 🏁</td></tr>';
       return;
     }
 
-    tbody.innerHTML = board.map((g, i) => {
-      const isOT = (g.secondsRemaining || 0) < 2100; // OT_THRESH
-      const trialLabel = g.trialNumber > 1
-        ? `<span class="trial-badge">Trial ${g.trialNumber}</span>`
+    const playedRows = board.filter(g => g.played);
+    document.getElementById('lb-summary').textContent =
+      `${board.length} groups represented · ${playedRows.length} completed · ${board.length - playedRows.length} not played`;
+
+    const fmtSec = s => s == null ? '—' : fmtTime(s);
+    const pen    = v => (v ? '−' + v.toLocaleString() : '0');
+
+    tbody.innerHTML = board.map(g => {
+      // Groups that have not played show an explicit empty state. They are never
+      // rendered as zeroes, which would read as a team that scored nothing.
+      if (!g.played) {
+        return `<tr class="lb-unplayed" style="opacity:0.55;">
+          <td class="rank-cell">—</td>
+          <td class="name-cell">${escHtml(g.name)}${g.trialGroup ? '<span class="trial-badge">TRIAL</span>' : ''}</td>
+          <td class="score-cell">—</td>
+          <td colspan="10" style="color:var(--dim);font-size:0.74rem;">Not played</td>
+          <td style="font-size:0.72rem;color:var(--dim);">—</td>
+        </tr>`;
+      }
+      const trialLabel = g.trialGroup
+        ? `<span class="trial-badge">TRIAL${g.playCount > 1 ? ' ×' + g.playCount : ''}</span>`
         : '';
-      const resumedLabel = g.resumed
-        ? `<span class="resumed-badge">Resumed</span>`
-        : '';
-      const timeSpent = g.timeSpentSec ? fmtTime(g.timeSpentSec) : '—';
-      return `<tr class="${g.trialNumber > 1 ? 'trial-row' : ''}">
-        <td class="rank-cell">${rankEmoji(i)}</td>
+      const resumedLabel = g.resumed ? `<span class="resumed-badge">Resumed</span>` : '';
+      return `<tr>
+        <td class="rank-cell">${rankEmoji(g.rank - 1)}</td>
         <td class="name-cell">${escHtml(g.name)}${trialLabel}${resumedLabel}</td>
-        <td class="score-cell ${i === 0 ? 'top' : ''}">${(g.score||0).toLocaleString()}</td>
+        <td class="score-cell ${g.rank === 1 ? 'top' : ''}">${g.score.toLocaleString()}</td>
         <td class="puzzles-cell">${puzzlePips(g.puzzlesDone)} <small>${g.puzzlesDone}/11</small></td>
-        <td class="time-cell">⏱ ${timeSpent}</td>
-        <td class="wrong-cell">${(g.wrongAnswers||0) > 0 ? '✗ ' + g.wrongAnswers : '✓ 0'}</td>
-        <td class="time-cell">${(g.hintPenalty||0) > 0 ? '💡 −' + g.hintPenalty + 'pts' : '—'}</td>
-        <td>${g.won ? '<span class="status-badge badge-completed">PASSED</span>' : (isOT ? '<span class="status-badge badge-ot">OVERTIME</span>' : '<span class="status-badge badge-pending">TIME UP</span>')}</td>
+        <td class="time-cell">⏱ ${fmtSec(g.durationSec)}</td>
+        <td class="wrong-cell">${g.mistakes > 0 ? '✗ ' + g.mistakes : '✓ 0'}</td>
+        <td class="wrong-cell">${pen(g.mistakePenalty)}</td>
+        <td class="time-cell">${g.hintsUsed > 0 ? '💡 ' + g.hintsUsed : '0'}</td>
+        <td class="wrong-cell">${pen(g.hintPenalty)}</td>
+        <td class="time-cell" style="color:var(--accent2);">${g.earlyFinishReward ? '+' + g.earlyFinishReward.toLocaleString() + ' (' + fmtSec(g.earlyFinishSec) + ')' : '—'}</td>
+        <td class="time-cell">${g.overtimeSec ? fmtSec(g.overtimeSec) + ' (' + g.overtimeMin + 'm)' : '—'}</td>
+        <td class="wrong-cell">${pen(g.timePenalty)}</td>
+        <td>${g.won ? '<span class="status-badge badge-completed">PASSED</span>' : (g.overtimeSec > 0 ? '<span class="status-badge badge-ot">OVERTIME</span>' : '<span class="status-badge badge-pending">TIME UP</span>')}</td>
         <td style="font-size:0.72rem;color:var(--dim);">${fmtDt(g.completedAt)}</td>
       </tr>`;
     }).join('');
