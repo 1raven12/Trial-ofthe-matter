@@ -1191,11 +1191,14 @@ async function initLogin() {
 }
 
 function showStartScreen(groupName) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('startscreen').style.display  = 'flex';
+  // Populate before revealing. Setting display first showed the start screen for
+  // a frame with an empty greeting, so the player briefly saw an unlabelled
+  // screen and could not tell which group — or demo mode — they were in.
   if (groupName) {
     document.getElementById('group-greeting').textContent = t('login.logged_in_as').replace('{name}', groupName);
   }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('startscreen').style.display  = 'flex';
 }
 
 document.getElementById('login-btn').onclick = async () => {

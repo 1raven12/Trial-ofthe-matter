@@ -182,10 +182,20 @@ async function testDemoMode(browser) {
     return;
   }
 
-  // B3: Start screen has demo label
-  const startTitle = await page.$eval('#startscreen', el => el.textContent);
+  // B3: Start screen has demo label.
+  // Assert the settled screen: wait for the greeting to be populated rather than
+  // reading it the instant #startscreen turns visible.
+  let startTitle = '';
+  try {
+    await page.waitForFunction(
+      () => (document.getElementById('group-greeting')?.textContent || '').trim().length > 0,
+      { timeout: 5000 });
+    startTitle = await page.$eval('#startscreen', el => el.textContent);
+  } catch {
+    startTitle = await page.$eval('#startscreen', el => el.textContent);
+  }
   if (startTitle.includes('Demo') || startTitle.includes('demo')) ok('B3: Start screen has demo label');
-  else ko('B3: Start screen has demo label', 'no "Demo" in start screen text');
+  else ko('B3: Start screen has demo label', `greeting never populated; text: ${JSON.stringify(startTitle.slice(0, 80))}`);
 
   // B4: Start button exists and visible
   const startBtnVisible = await page.isVisible('#start-btn');
