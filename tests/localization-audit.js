@@ -50,10 +50,26 @@ const IDENTIFIER_ALIASES = {
   '12.50': ['12,50'],
   '12.53': ['12,53'],
   '+0.03': ['+0,03'],
-  'GMP':   ['BPF', 'BPx', 'GxP', 'ГМП', 'जीएमपी', 'ಜಿಎಂಪಿ', 'ஜிஎம்பி', 'జిఎంపి', 'GMP-'],
+  // es/pt/fr localise Good Manufacturing Practice; Serbian Cyrillic transliterates
+  'GMP':   ['BPF', 'BPx', 'GxP', 'ГМП', 'जीएमपी', 'ಜಿಎಂಪಿ', 'ஜிஎம்பி', 'జిఎంపి'],
   'CoA':   ['CdA', 'CA', 'COA', 'CofA'],
   'GDP':   ['GDocP', 'BPD', 'BPd'],
+  // signage word; sr-Cyrl transliterates it consistently across all 9 of its uses
+  'HOLD':  ['ХОЛД'],
 };
+
+/**
+ * Normalise a locale's text before identifier matching so that legitimate
+ * orthography is not reported as content loss:
+ *   - German attributive compounds hyphenate standard numbers
+ *     ("ISO-15378-Verpackungskonformitätsakte" ≡ "ISO 15378")
+ *   - non-breaking and narrow spaces are used as thin separators
+ */
+function normaliseForIdentifiers(s) {
+  return String(s)
+    .replace(/ISO[-‐‑‒–  ]/g, 'ISO ')
+    .replace(/[   ]/g, ' ');
+}
 
 /**
  * Canonical content spec. Each entry is one authored content block.
@@ -161,7 +177,7 @@ const GLOSSARY = {
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function hasIdentifier(text, id) {
-  const s = String(text);
+  const s = normaliseForIdentifiers(text);
   if (s.includes(id)) return true;
   for (const alt of (IDENTIFIER_ALIASES[id] || [])) if (s.includes(alt)) return true;
   return false;
