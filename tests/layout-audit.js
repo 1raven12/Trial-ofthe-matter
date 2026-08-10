@@ -203,7 +203,14 @@ async function auditLocaleViewport(browser, lang, vp) {
     await page.waitForSelector('#demo-pw-input', { state: 'visible' });
     await page.fill('#demo-pw-input', ADMIN_PW);
     await page.click('#demo-pw-btn');
-    await page.waitForSelector('#startscreen', { state: 'visible', timeout: 10000 });
+    // #startscreen carries display:flex from page load and is simply covered by
+    // #login-screen (z-index 500 vs 300), so waiting for it to be "visible"
+    // returns immediately and proves nothing. The login layer going away is the
+    // real signal that we are on the start screen.
+    await page.waitForFunction(
+      () => getComputedStyle(document.getElementById('login-screen')).display === 'none'
+         && getComputedStyle(document.getElementById('startscreen')).display !== 'none',
+      { timeout: 15000 });
     await page.waitForTimeout(250);
 
     await assertNoTrappedScroll(sink, page, `${tag} start screen`);

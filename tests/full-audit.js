@@ -174,7 +174,13 @@ async function testDemoMode(browser) {
   await page.fill('#demo-pw-input', ADMIN_PW);
   await page.click('#demo-pw-btn');
   try {
-    await page.waitForSelector('#startscreen', { state: 'visible', timeout: 6000 });
+    // #startscreen is display:flex from page load, merely covered by the login
+    // layer, so waiting for it to become "visible" passes before demo login has
+    // happened at all. Wait for the login layer to be dismissed instead.
+    await page.waitForFunction(
+      () => getComputedStyle(document.getElementById('login-screen')).display === 'none'
+         && getComputedStyle(document.getElementById('startscreen')).display !== 'none',
+      { timeout: 10000 });
     ok('B2: Demo login shows start screen');
   } catch {
     ko('B2: Demo login shows start screen', 'start screen never appeared');
