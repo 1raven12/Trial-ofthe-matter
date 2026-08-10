@@ -228,8 +228,8 @@
 
     <!-- ── Leaderboard ── -->
     <section id="leaderboard-section" style="margin-bottom:28px;">
-      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Live Leaderboard — All Trials</h2>
-      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">Each group trial is shown as a separate row. Sorted by score (highest first). Ties broken by earliest completion time.</p>
+      <h2 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏆 Official Leaderboard — One Result Per Group</h2>
+      <p style="font-size:0.72rem;color:var(--dim);margin-bottom:10px;">Each group's first official result is shown. Sorted by score (highest first). Ties broken by earliest completion time. Up to 256 entries.</p>
       <table class="lb-table">
         <thead>
           <tr>
@@ -377,15 +377,15 @@ async function loadLeaderboard() {
     }
 
     tbody.innerHTML = board.map((g, i) => {
-      const isOT = (g.secondsRemaining || 0) < 2100; // OT_THRESH
-      const trialLabel = g.trialNumber > 1
-        ? `<span class="trial-badge">Trial ${g.trialNumber}</span>`
+      const isOT = (g.secondsRemaining || 0) < 1800; // OT_THRESH
+      const trialLabel = g.trialGroup
+        ? `<span class="trial-badge">TRIAL${g.trialCount > 1 ? ' ×' + g.trialCount : ''}</span>`
         : '';
       const resumedLabel = g.resumed
         ? `<span class="resumed-badge">Resumed</span>`
         : '';
       const timeSpent = g.timeSpentSec ? fmtTime(g.timeSpentSec) : '—';
-      return `<tr class="${g.trialNumber > 1 ? 'trial-row' : ''}">
+      return `<tr>
         <td class="rank-cell">${rankEmoji(i)}</td>
         <td class="name-cell">${escHtml(g.name)}${trialLabel}${resumedLabel}</td>
         <td class="score-cell ${i === 0 ? 'top' : ''}">${(g.score||0).toLocaleString()}</td>

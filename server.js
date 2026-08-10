@@ -307,22 +307,28 @@ app.post('/api/game/submit', requireGroup, (req, res) => {
   const completedAt  = new Date().toISOString();
   const timeSpentSec = Math.round((Date.now() - startedAtMs) / 1000);
 
-  group.status           = 'completed';
-  group.score            = score;
-  group.puzzlesDone      = puzzlesDone;
-  group.wrongAnswers     = wrongAnswers;
-  group.hintPenalty      = hintPenalty;
-  group.won              = !!won;
-  group.secondsRemaining = secsLeft;
-  group.timeSpentSec     = timeSpentSec;
-  group.completedAt      = completedAt;
+  group.status = 'completed';
+
+  // Official score is set only on first completion (score === null).
+  // Subsequent replays by Group 256 (trial group) keep the original result.
+  const isFirstCompletion = (group.score === null || group.score === undefined);
+  if (isFirstCompletion) {
+    group.score            = score;
+    group.puzzlesDone      = puzzlesDone;
+    group.wrongAnswers     = wrongAnswers;
+    group.hintPenalty      = hintPenalty;
+    group.won              = !!won;
+    group.secondsRemaining = secsLeft;
+    group.timeSpentSec     = timeSpentSec;
+    group.completedAt      = completedAt;
+  }
 
   // Permanently lock non-trial groups after completion
   if (!group.trialGroup) {
     group.permanentlyLocked = true;
   }
 
-  // Append to trial history
+  // Append to trial history (always, for every play)
   if (!Array.isArray(group.trials)) group.trials = [];
   group.trials.push({
     trialNumber:    group.trials.length + 1,
@@ -342,34 +348,34 @@ app.post('/api/game/submit', requireGroup, (req, res) => {
   res.json({ score, puzzlesDone, wrongAnswers, secondsRemaining: secsLeft, timeSpentSec, hiddenFound, hiddenCorrect, hiddenBonus });
 });
 
-// Admin-only leaderboard — returns every trial as a separate row
+// Admin-only leaderboard — one row per group (official first-completion score)
+// Groups 1–255 are permanently locked after first completion so they can only appear once.
+// Group 256 (trial group) may replay but its official scoreboard entry is fixed at first completion.
 app.get('/api/leaderboard', requireAdmin, (req, res) => {
   const data = load();
   const rows = [];
 
   data.groups.forEach(g => {
-    const trialList = Array.isArray(g.trials) ? g.trials : [];
-    if (trialList.length > 0) {
-      trialList.forEach(t => {
-        rows.push({
-          name: g.name, trialNumber: t.trialNumber,
-          score: t.score, puzzlesDone: t.puzzlesDone, won: t.won,
-          wrongAnswers: t.wrongAnswers, hintPenalty: t.hintPenalty || 0,
-          secondsRemaining: t.secondsRemaining, timeSpentSec: t.timeSpentSec,
-          completedAt: t.completedAt, resumed: t.resumed,
-        });
-      });
-    } else if (g.status === 'completed') {
-      rows.push({
-        name: g.name, trialNumber: 1,
-        score: g.score, puzzlesDone: g.puzzlesDone, won: g.won,
-        wrongAnswers: g.wrongAnswers, hintPenalty: g.hintPenalty || 0,
-        secondsRemaining: g.secondsRemaining, timeSpentSec: g.timeSpentSec,
-        completedAt: g.completedAt, resumed: false,
-      });
-    }
+    // Only include groups that have an official score (completed at least once since last reset)
+    if (g.score === null || g.score === undefined) return;
+    rows.push({
+      name:             g.name,
+      groupId:          g.id,
+      score:            g.score,
+      puzzlesDone:      g.puzzlesDone      || 0,
+      won:              !!g.won,
+      wrongAnswers:     g.wrongAnswers     || 0,
+      hintPenalty:      g.hintPenalty      || 0,
+      secondsRemaining: g.secondsRemaining || 0,
+      timeSpentSec:     g.timeSpentSec     || 0,
+      completedAt:      g.completedAt,
+      resumed:          !!g.resumed,
+      trialGroup:       !!g.trialGroup,
+      trialCount:       Array.isArray(g.trials) ? g.trials.length : 1,
+    });
   });
 
+  // Sort: highest score first; ties broken by earliest completion time
   rows.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return new Date(a.completedAt) - new Date(b.completedAt);
@@ -890,15 +896,19 @@ io.on('connection', (socket) => {
       if (group) {
         const timeSpentSec = Math.round((Date.now() - (gs.startedAt || Date.now())) / 1000);
         const completedAt  = new Date().toISOString();
-        group.status           = 'completed';
-        group.score            = score;
-        group.puzzlesDone      = gs.puzzlesDone;
-        group.wrongAnswers     = gs.wrongAnswers;
-        group.hintPenalty      = gs.hintPenalty || 0;
-        group.won              = false;
-        group.secondsRemaining = 0;
-        group.timeSpentSec     = timeSpentSec;
-        group.completedAt      = completedAt;
+        group.status = 'completed';
+        // Official score is set only on first completion
+        const isFirstCompletion = (group.score === null || group.score === undefined);
+        if (isFirstCompletion) {
+          group.score            = score;
+          group.puzzlesDone      = gs.puzzlesDone;
+          group.wrongAnswers     = gs.wrongAnswers;
+          group.hintPenalty      = gs.hintPenalty || 0;
+          group.won              = false;
+          group.secondsRemaining = 0;
+          group.timeSpentSec     = timeSpentSec;
+          group.completedAt      = completedAt;
+        }
         if (!group.trialGroup) group.permanentlyLocked = true;
         if (!Array.isArray(group.trials)) group.trials = [];
         group.trials.push({
