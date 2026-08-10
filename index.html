@@ -67,6 +67,7 @@
     .lb-score { color: var(--accent2); font-weight: bold; }
     .lb-group { color: var(--text); font-weight: bold; }
     .login-theme { font-size: 0.62rem; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 18px; opacity: 0.75; }
+
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -467,6 +468,15 @@
     .plunger-ok   { background: #0d2a1e; border: 1.5px solid #00c97a; color: #00c97a; }
     .plunger-fail { background: #2a0d10; border: 1.5px solid #e63946; color: #e63946; }
 
+    /* Task prompt callout — rendered for every locale, English included. */
+    .modal-prompt {
+      margin-top: 14px; padding: 10px 14px;
+      background: rgba(0,153,230,0.1);
+      border-inline-start: 3px solid var(--accent);
+      border-radius: 3px; font-size: 0.9rem;
+      color: var(--text); font-weight: 600;
+    }
+
     #modal-choices { display: none; flex-direction: column; gap: 7px; margin-bottom: 12px; }
     .choice-btn {
       background: transparent; border: 1px solid var(--border);
@@ -590,6 +600,44 @@
     [dir="rtl"] #lobby-status { text-align: right; }
     [dir="rtl"] #demo-pw-box { text-align: right; }
     [dir="rtl"] .choice-btn { text-align: right; }
+    /* ── Full-screen layer scrolling ──────────────────────────────────────────
+       A fixed, viewport-sized flex container that centres its children overflows
+       in BOTH directions once the content is taller than the viewport, and the
+       part that spills past the start edge is unreachable — scrollTop cannot go
+       negative. The screen then looked frozen: no scrolling up, and no way to
+       scroll down to the Start / Continue button. It only reproduced when the
+       content happened to exceed the viewport, which is why it appeared
+       intermittent and hit the wordier locales and shorter windows first.
+       Zooming out to ~25% shrank the content until it fit again, which is the
+       workaround players found.
+
+       `safe center` centres while the content fits and falls back to start
+       alignment the moment it does not, so nothing is ever placed out of reach.
+       The plain `flex-start` line before it is the baseline for engines without
+       `safe`: they drop the invalid declaration and keep a fully scrollable
+       start-aligned layout, which degrades in appearance but never in reach. */
+    #login-screen,
+    #startscreen,
+    #endscreen,
+    #already-played-screen {
+      justify-content: flex-start;
+      justify-content: safe center;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    /* Same hazard on the cross axis for the single-box overlays. */
+    #modal-overlay,
+    #lb-overlay,
+    #pause-overlay,
+    #alarm-overlay {
+      align-items: flex-start;
+      align-items: safe center;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    /* These two were the only boxes with no height ceiling of their own. */
+    #pause-box, #alarm-box { max-height: 92vh; overflow-y: auto; }
   </style>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/translations.js"></script>
@@ -634,7 +682,7 @@
     </div>
     <div class="lf">
       <label data-t="login.group_pin">Group PIN</label>
-      <input type="password" id="group-pin" data-t-ph="login.enter_pin" placeholder="Enter your group PIN" maxlength="10" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+      <input type="password" id="group-pin" data-t-ph="login.enter_pin" placeholder="Enter your group PIN" maxlength="10" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" />
     </div>
     <div class="lf">
       <label data-t="login.group_size">How many people are in your group?</label>
@@ -659,7 +707,7 @@
     <div id="demo-pw-box" style="display:none;margin-top:12px;text-align:left;">
       <div class="lf" style="margin-bottom:8px;">
         <label data-t="login.admin_pw_label">Admin Password (required for Demo)</label>
-        <input type="password" id="demo-pw-input" data-t-ph="login.admin_pw_ph" placeholder="Enter admin password" maxlength="60" />
+        <input type="password" id="demo-pw-input" data-t-ph="login.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="new-password" />
       </div>
       <div id="demo-pw-error" style="color:var(--danger);font-size:0.75rem;min-height:16px;margin-bottom:6px;"></div>
       <button class="btn primary" id="demo-pw-btn" data-t="login.demo_btn" style="width:100%;">Enter Demo Mode</button>
@@ -674,7 +722,7 @@
     <div id="lb-pw-section">
       <div class="lf" style="margin-bottom:6px;">
         <label data-t="lb.admin_pw">Admin Password</label>
-        <input type="password" id="lb-pw-input" data-t-ph="lb.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="off" />
+        <input type="password" id="lb-pw-input" data-t-ph="lb.admin_pw_ph" placeholder="Enter admin password" maxlength="60" autocomplete="new-password" />
       </div>
       <div id="lb-pw-error"></div>
       <div style="display:flex;gap:8px;">
@@ -1156,6 +1204,11 @@ async function submitScore(won) {
 // LOGIN INIT
 // ────────────────────────────────────────────────
 async function initLogin() {
+  // Prevent browser autofill from leaking a previous PIN into a fresh session
+  document.getElementById('group-pin').value     = '';
+  document.getElementById('demo-pw-input').value = '';
+  document.getElementById('lb-pw-input').value   = '';
+
   const sel = document.getElementById('group-select');
   const err = document.getElementById('login-error');
   const retryBtn = document.getElementById('groups-retry-btn');
@@ -1177,11 +1230,14 @@ async function initLogin() {
 }
 
 function showStartScreen(groupName) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('startscreen').style.display  = 'flex';
+  // Populate before revealing. Setting display first showed the start screen for
+  // a frame with an empty greeting, so the player briefly saw an unlabelled
+  // screen and could not tell which group — or demo mode — they were in.
   if (groupName) {
     document.getElementById('group-greeting').textContent = t('login.logged_in_as').replace('{name}', groupName);
   }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('startscreen').style.display  = 'flex';
 }
 
 document.getElementById('login-btn').onclick = async () => {
@@ -1396,14 +1452,12 @@ function useHint() {
   const hint = ROOM_HINTS[room];
   if (!hint) return;
   S.hintsUsed[room] = true;
-  const timeCost = 60;
-  const ptsCost  = 50;
-  S.timerSec = Math.max(0, S.timerSec - timeCost);
+  const ptsCost = 50;
   S.hintPenalty += ptsCost;
-  if (S.socket) S.socket.emit('hint_used', { room, timeCost, ptsCost });
+  if (S.socket) S.socket.emit('hint_used', { room, ptsCost });
   const tHint = t('hint.' + room);
   log(`💡 HINT — ${t('room.' + room) || ROOMS[room].name}: ${tHint !== 'hint.' + room ? tHint : hint}`, 'hint');
-  log(t('hint.penalty_log').replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+  log(t('hint.penalty_log').replace('{pts}', ptsCost), 'warn');
 }
 
 // ────────────────────────────────────────────────
@@ -1448,13 +1502,14 @@ const ROOMS = {
     id: 'qclab', badge: 'AREA 03 — QC LABORATORY',
     name: 'Quality Control Laboratory',
     emoji: '🔬',
-    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY." The ISO 15378 packaging compliance file sits on the far bench. Above the bench, the site motto is printed in bold: "Progress in every step · Quality in every detail."',
+    desc: 'The QC lab smells of IPA and calibration fluid. Dimensional gauges, particle counters, and sterility test equipment line the benches. A micrometer station in the corner carries a yellow "OUT OF CALIBRATION — DO NOT USE" sticker. The calibration reference cabinet is mounted on the wall. A sign on the QA Office door: "CALIBRATION SIGN-OFF REQUIRED FOR ENTRY." The ISO 15378 packaging compliance file sits on the far bench. A maintenance log from Station 3 is open on the side bench — it looks like it was pulled during the investigation. Above the bench, the site motto is printed in bold: "Progress in every step · Quality in every detail."',
     hotspots: [
       { label: 'Calibration Reference Cabinet',      action: 'open_cal_cabinet'    },
       { label: 'Micrometer Station',                 action: 'use_micrometer'      },
       { label: 'SOP Document Rack',                  action: 'check_sop_rack'      },
       { label: 'Equipment Logbook',                  action: 'check_equip_log'     },
       { label: 'ISO 15378 Packaging Compliance File', action: 'check_iso15378'     },
+      { label: 'Maintenance Log (Side Bench)',        action: 'read_maint_log'      },
     ],
     hiddenSpots: [
       { emoji: '🌳', action: 'find_hq_qclab_1',    trigger: 'room-title'      },
@@ -1465,9 +1520,8 @@ const ROOMS = {
     id: 'qaoffice', badge: 'AREA 04 — QA / COMPLIANCE',
     name: 'QA & Compliance Office',
     emoji: '🗂️',
-    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." A maintenance log has been left open on the side table — someone was in a hurry. An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 + ISO 15378 verification to unlock. A framed quality pledge on the wall reads: "Progress in every step · Quality in every detail — We own our processes."',
+    desc: 'The hub of quality operations. ISO 13485 clause labels run across the filing cabinets. The CAPA workstation shows: "NON-CONFORMANCE #NCR-0892 — AWAITING ROOT CAUSE ANALYSIS." An ISO 9001 management review board shows last quarter\'s KPIs. The batch record safe on the wall requires CAPA + ISO 9001 + ISO 15378 verification to unlock. A framed quality pledge on the wall reads: "Progress in every step · Quality in every detail — We own our processes."',
     hotspots: [
-      { label: 'Maintenance Log (Side Table)', action: 'read_maint_log'       },
       { label: 'CAPA Workstation',             action: 'use_capa_station'     },
       { label: 'ISO 13485 Filing Cabinet',     action: 'check_iso_files'      },
       { label: 'ISO 9001 Management Review',   action: 'check_iso9001'        },
@@ -1811,9 +1865,9 @@ function handleAction(action) {
         submitLabel: t('btn.apply_correction'),
         puzzleKey: 'calibration_done',
         onSubmit: val => {
-          const v = val.trim().replace(/\s/g, '');
-          // Accept -0.03, 0.03, -.03, -0.030 etc.
-          if (v === '-0.03' || v === '0.03' || v === '-0.030' || v === '-.03') {
+          const v = val.trim().replace(/\s/g, '').replace(',', '.');
+          // Only accept +0.03 — the instrument reads 0.03 mm too HIGH (12.53 − 12.50)
+          if (v === '0.03' || v === '+0.03' || v === '0.030' || v === '+0.030' || v === '.03') {
             myPuzzleComplete('calibration_done', () => {
               log(t('msg.cal_log'), 'success');
               log(t('msg.cal_fact'), 'fact');
@@ -2611,12 +2665,14 @@ function openModal({ tag, title, body, questionKey, placeholder, submitLabel, on
   document.getElementById('modal-tag').textContent   = tag   || t('modal.default_tag');
   document.getElementById('modal-title').textContent = title || '';
 
-  // Append translated question block for non-English players
+  // Task prompt callout. Part of the canonical task structure, so it renders in
+  // EVERY locale — English included. Gating it to non-English made the English
+  // build show one block fewer than every other language for the same task.
   let finalBody = body || '';
-  if (questionKey && S.lang !== 'en') {
+  if (questionKey) {
     const tq = t(questionKey);
     if (tq && tq !== questionKey) {
-      finalBody += `<div style="margin-top:14px;padding:10px 14px;background:rgba(0,153,230,0.1);border-inline-start:3px solid var(--accent);border-radius:3px;font-size:0.9rem;color:var(--text);font-weight:600;">🌐 ${tq}</div>`;
+      finalBody += `<div class="modal-prompt">🌐 ${tq}</div>`;
     }
   }
   document.getElementById('modal-body').innerHTML    = finalBody;
@@ -3061,10 +3117,10 @@ function connectSocket() {
     if (!S.hintsUsed[room]) {
       S.hintsUsed[room] = true;
       S.hintPenalty += (ptsCost || 50);
-      S.timerSec = Math.max(0, S.timerSec - (timeCost || 60));
+      // Note: hints cost points only — NOT time. Timer is wall-clock only.
       renderRoom();
       updateLiveScore();
-      log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+      log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{pts}', ptsCost), 'warn');
     }
   });
 
