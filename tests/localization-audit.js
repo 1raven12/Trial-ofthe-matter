@@ -313,6 +313,30 @@ function auditLanguage(lang, CORRECT) {
     ok(`[${lang}] D7 no controlled-glossary conflicts declared`);
   }
 
+  // ── D9: player-facing cost claims must match the implementation ──
+  // useHint() deducts points only; a locale promising "−60s" would be lying to
+  // the player. The truth is read from index.html, not hard-coded here.
+  const idxSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const useHintFn = idxSrc.slice(idxSrc.indexOf('function useHint'), idxSrc.indexOf('function useHint') + 900);
+  const hintCostsTime = /timerSec\s*(?:-=|=\s*Math\.max\([^)]*timerSec\s*-)/.test(useHintFn);
+  const claimKeys = ['nav.hint_btn', 'start.rules_content', 'start.scoring_content'];
+  const claims = [];
+  for (const k of claimKeys) {
+    const v = String(D[k] ?? '');
+    if (k === 'start.scoring_content') {
+      // 1,800 / 3,600 are legitimate max-bonus figures — inspect penalty cells only
+      const cells = [...v.matchAll(/<td[^>]*color:var\(--danger\)[^>]*>([^<]*)<\/td>/g)].map(m => m[1]);
+      if (cells.some(c => /60/.test(c))) claims.push(k);
+    } else if (/60/.test(v)) claims.push(k);
+  }
+  if (hintCostsTime === (claims.length > 0)) {
+    ok(`[${lang}] D9 hint cost claims match implementation (time cost: ${hintCostsTime ? 'yes' : 'no'})`);
+  } else if (claims.length) {
+    ko(`[${lang}] D9 advertises a hint time cost the game does not apply`, claims.join(', '));
+  } else {
+    ko(`[${lang}] D9 hint time cost applied but not disclosed`, 'useHint() deducts time; no locale string says so');
+  }
+
   // ── D8: untranslated fallback ──
   if (!isEn) {
     const same = EN_KEYS.filter(k => String(T.en[k]).length > 80 && String(T.en[k]) === String(D[k]));
