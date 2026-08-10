@@ -1401,14 +1401,12 @@ function useHint() {
   const hint = ROOM_HINTS[room];
   if (!hint) return;
   S.hintsUsed[room] = true;
-  const timeCost = 60;
-  const ptsCost  = 50;
-  S.timerSec = Math.max(0, S.timerSec - timeCost);
+  const ptsCost = 50;
   S.hintPenalty += ptsCost;
-  if (S.socket) S.socket.emit('hint_used', { room, timeCost, ptsCost });
+  if (S.socket) S.socket.emit('hint_used', { room, ptsCost });
   const tHint = t('hint.' + room);
   log(`💡 HINT — ${t('room.' + room) || ROOMS[room].name}: ${tHint !== 'hint.' + room ? tHint : hint}`, 'hint');
-  log(t('hint.penalty_log').replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+  log(t('hint.penalty_log').replace('{pts}', ptsCost), 'warn');
 }
 
 // ────────────────────────────────────────────────
@@ -3066,10 +3064,10 @@ function connectSocket() {
     if (!S.hintsUsed[room]) {
       S.hintsUsed[room] = true;
       S.hintPenalty += (ptsCost || 50);
-      S.timerSec = Math.max(0, S.timerSec - (timeCost || 60));
+      // Note: hints cost points only — NOT time. Timer is wall-clock only.
       renderRoom();
       updateLiveScore();
-      log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{time}', timeCost).replace('{pts}', ptsCost), 'warn');
+      log(t('log.hint_used_other').replace('{name}', fromName).replace('{room}', ROOMS[room] ? (t('room.' + room) || ROOMS[room].name) : room).replace('{pts}', ptsCost), 'warn');
     }
   });
 
