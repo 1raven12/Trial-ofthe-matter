@@ -10974,16 +10974,16 @@
       "requiredSize": 3,
       "permanentlyLocked": false,
       "lockedRoster": [],
-      "status": "completed",
-      "score": 5746,
-      "puzzlesDone": 11,
-      "wrongAnswers": 1,
+      "status": "pending",
+      "score": null,
+      "puzzlesDone": 0,
+      "wrongAnswers": 0,
       "hintPenalty": 0,
-      "won": true,
-      "secondsRemaining": 3598,
-      "timeSpentSec": 2,
-      "completedAt": "2026-08-10T20:40:20.964Z",
-      "startedAt": "2026-08-10T20:40:18.905Z",
+      "won": false,
+      "secondsRemaining": 0,
+      "timeSpentSec": 0,
+      "completedAt": null,
+      "startedAt": null,
       "resumed": false,
       "trials": [
         {
@@ -11170,6 +11170,21 @@
           "secondsRemaining": 3598,
           "timeSpentSec": 2,
           "completedAt": "2026-08-10T20:40:20.964Z",
+          "resumed": false
+        },
+        {
+          "trialNumber": 14,
+          "score": 5746,
+          "puzzlesDone": 11,
+          "wrongAnswers": 1,
+          "hintPenalty": 0,
+          "hiddenFound": 0,
+          "hiddenCorrect": 0,
+          "hiddenBonus": 0,
+          "won": true,
+          "secondsRemaining": 3598,
+          "timeSpentSec": 2,
+          "completedAt": "2026-08-10T20:45:02.833Z",
           "resumed": false
         }
       ]
