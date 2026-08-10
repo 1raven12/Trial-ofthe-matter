@@ -411,9 +411,19 @@ async function auditUI(langs) {
       const page = await ctx.newPage();
       try {
         await page.addInitScript(l => localStorage.setItem('qw_lang', l), lang);
-        await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await page.waitForFunction(
-          () => document.getElementById('group-select')?.options.length > 1, { timeout: 15000 });
+        // The group list is fetched from the API; a cold or busy server can make
+        // the first load slow. Retry once so a transient stall is not reported
+        // as a localization defect.
+        let loaded = false, lastErr;
+        for (let attempt = 1; attempt <= 2 && !loaded; attempt++) {
+          try {
+            await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await page.waitForFunction(
+              () => document.getElementById('group-select')?.options.length > 1, { timeout: 30000 });
+            loaded = true;
+          } catch (e) { lastErr = e; await page.waitForTimeout(1000); }
+        }
+        if (!loaded) throw lastErr;
 
         // no raw translation keys leaked into the DOM
         const raw = await page.evaluate(() =>

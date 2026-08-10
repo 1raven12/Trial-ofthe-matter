@@ -34,14 +34,21 @@ function run(args, label) {
   const passed = m ? Number(m[1]) : 0;
   const total  = m ? Number(m[2]) : 0;
   const clean  = r.status === 0 && failed === 0 && total > 0;
+  // Capture the failing lines. A failure that is not recorded cannot be
+  // diagnosed after the fact, and an undiagnosed failure cannot be certified
+  // away as flakiness — so the reasons go into the ledger, not just the console.
+  const reasons = out.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.startsWith('✗') || l.startsWith('→') || /^\d+\.\s/.test(l))
+    .slice(0, 20);
   if (!clean) {
-    const lines = out.split('\n').filter(l => l.includes('✗')).slice(0, 10);
     process.stdout.write(`    ${label}: FAIL (${failed} failed, ${secs}s)\n`);
-    lines.forEach(l => process.stdout.write('        ' + l.trim() + '\n'));
+    reasons.slice(0, 10).forEach(l => process.stdout.write('        ' + l + '\n'));
+    if (!reasons.length) process.stdout.write('        ' + out.split('\n').slice(-6).join('\n        ') + '\n');
   } else {
     process.stdout.write(`    ${label}: PASS ${passed}/${total} (${secs}s)\n`);
   }
-  return { clean, passed, total, failed, secs };
+  return { clean, passed, total, failed, secs, reasons: clean ? undefined : reasons };
 }
 
 function certify(name, args) {

@@ -62,14 +62,27 @@ async function get(p, tok) {
 }
 const admin = async () => (await post('/api/admin/login', { password: ADMIN_PW })).body.token;
 
+/**
+ * Log in to the trial group, tolerating the socket-teardown race.
+ * Sockets from a previous play disconnect asynchronously, so the server can
+ * still count them in the roster and answer 403 "group is full" for a moment.
+ * That is a test-harness race, not a product defect, so it is retried rather
+ * than reported.
+ */
+async function loginTrial() {
+  for (let attempt = 1; attempt <= 8; attempt++) {
+    const r = await post('/api/login', { groupId: TRIAL, pin: TRIAL_PIN, groupSize: 3 });
+    if (r.status === 200 && r.body.token) return r.body.token;
+    if (r.status !== 403) throw new Error('login: ' + JSON.stringify(r.body));
+    await new Promise(res => setTimeout(res, 250 * attempt));
+  }
+  throw new Error('login: group still reported full after 8 attempts');
+}
+
 /** Play one full game on the trial group. */
 async function playTrial({ wrong = 0, hints = [] } = {}) {
   const toks = [];
-  for (let i = 0; i < 3; i++) {
-    const r = await post('/api/login', { groupId: TRIAL, pin: TRIAL_PIN, groupSize: 3 });
-    if (r.status !== 200) throw new Error('login: ' + JSON.stringify(r.body));
-    toks.push(r.body.token);
-  }
+  for (let i = 0; i < 3; i++) toks.push(await loginTrial());
   const socks = await Promise.all(toks.map((t, i) => new Promise((res, rej) => {
     const s = ioClient(BASE, { auth: { token: t, memberName: 'P' + (i + 1) }, transports: ['websocket'] });
     s.on('state_init', () => res(s));
@@ -84,7 +97,14 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
   for (const k of PUZZLE_KEYS) { socks.forEach(s => s.emit('player_puzzle_done', { key: k })); await new Promise(r => setTimeout(r, 70)); }
   await new Promise(r => setTimeout(r, 350));
   const sub = await post('/api/game/submit', { won: true }, toks[0]);
-  socks.forEach(s => s.disconnect());
+  // Wait for the sockets to actually close before returning, so the next play
+  // does not race the server's roster cleanup.
+  await Promise.all(socks.map(s => new Promise(res => {
+    if (s.disconnected) return res();
+    s.on('disconnect', res);
+    s.disconnect();
+    setTimeout(res, 1500);
+  })));
   if (sub.status !== 200) throw new Error('submit: ' + JSON.stringify(sub.body));
   return sub.body;
 }
