@@ -781,7 +781,24 @@ io.on('connection', (socket) => {
 
   // ── Lobby: player ready ───────────────────────────────────────────────────
   socket.on('player_ready', () => {
-    if (groupSessions.has(groupId)) return;
+    // Trial groups that have completed may replay: clear the stale session
+    // so a fresh game can start. (Non-trial groups are permanently locked
+    // after completion and are rejected at the readyCount >= online check.)
+    if (groupSessions.has(groupId)) {
+      const d0 = load();
+      const g0 = d0.groups.find(g => g.id === groupId);
+      if (g0 && g0.trialGroup && g0.status === 'completed') {
+        groupSessions.delete(groupId);
+        groupReadyState.delete(groupId);
+        // Reset the group so timing and roster are correct for the new run
+        g0.status      = 'pending';
+        g0.startedAt   = null;
+        g0.lockedRoster = [];
+        save(d0);
+      } else {
+        return;
+      }
+    }
 
     if (!groupReadyState.has(groupId)) groupReadyState.set(groupId, new Map());
     const rs = groupReadyState.get(groupId);
