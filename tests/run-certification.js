@@ -1,149 +1,111 @@
 'use strict';
 /**
- * run-certification.js — drives the clean-pass certification.
+ * run-certification.js — drives the 54-consecutive-clean-pass requirement.
  *
- *   node tests/run-certification.js --languages     17 × 3 consecutive clean
- *   node tests/run-certification.js --global        3 × 3 consecutive clean
- *   node tests/run-certification.js                 both, in order
+ *   node tests/run-certification.js
  *
- * A pass counts only when it finishes with zero failures. Any failure resets
- * that language's streak to zero, and the streak must then be rebuilt from
- * scratch. Failed attempts are recorded but never counted toward the target.
+ * The sequence is 17 languages × 3 passes in a frozen order (English first),
+ * followed by 3 full-system passes: 54 in total.
+ *
+ * The streak is global, not per-language. A single failure anywhere ends the
+ * whole sequence: the run aborts immediately so the defect can be fixed,
+ * because every pass after a fix has to be re-earned from Pass 1. Passes
+ * already banked before the failure do not count toward the final 54.
+ *
+ * Nothing else may touch the server or data/groups.json while this runs — the
+ * suites drive the trial group and rewrite the group fixture, so a concurrent
+ * audit corrupts both.
  */
 
 const { spawnSync } = require('child_process');
 const path = require('path');
 const fs   = require('fs');
 
-const ROOT     = path.resolve(__dirname, '..');
-const TARGET   = 3;
-const MAX_TRIES = 8;          // guard against an unfixable loop
-const LEDGER   = path.join(ROOT, 'tests', '.certification-ledger.json');
+const ROOT   = path.resolve(__dirname, '..');
+const TARGET = 54;
+const PER_LANG = 3, GLOBAL_PASSES = 3;
+const LEDGER = path.join(ROOT, 'tests', '.certification-ledger.json');
+const LOGDIR = path.join(ROOT, 'tests', 'failure-logs');
 
+// Frozen order: object key order in translations.js, English first.
 const LANGS = Object.keys(
   new Function(fs.readFileSync(path.join(ROOT, 'translations.js'), 'utf8') + '; return TRANSLATIONS;')()
 );
 
-function run(args, label) {
+function runPass(args, label) {
   const t0 = Date.now();
-  const r = spawnSync('node', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync('node', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
-  const out  = (r.stdout || '') + (r.stderr || '');
-  const m    = out.match(/(\d+)\/(\d+) passed, (\d+) failed/);
-  const failed = m ? Number(m[3]) : (r.status === 0 ? 0 : -1);
+  const out = (r.stdout || '') + (r.stderr || '');
+  const m = out.match(/(\d+)\/(\d+) passed,\s*(\d+) failed/);
   const passed = m ? Number(m[1]) : 0;
   const total  = m ? Number(m[2]) : 0;
+  const failed = m ? Number(m[3]) : -1;
   const clean  = r.status === 0 && failed === 0 && total > 0;
-  // Capture the failing lines. A failure that is not recorded cannot be
-  // diagnosed after the fact, and an undiagnosed failure cannot be certified
-  // away as flakiness — so the reasons go into the ledger, not just the console.
-  const reasons = out.split('\n')
-    .map(l => l.trim())
-    .filter(l => l.startsWith('✗') || l.startsWith('→') || /^\d+\.\s/.test(l))
-    .slice(0, 20);
-  if (!clean) {
-    // Persist the child's complete output. The filtered reasons are enough for a
-    // normal assertion failure, but a suite that dies without a summary leaves
-    // nothing to filter — that transcript is the only record of why.
-    const logDir = path.join(ROOT, 'tests', 'failure-logs');
-    fs.mkdirSync(logDir, { recursive: true });
-    const slug = (args.join(' ') + ' ' + label).replace(/[^\w.-]+/g, '_').slice(0, 80);
-    const logPath = path.join(logDir, `${slug}.log`);
-    fs.writeFileSync(logPath, out);
-    process.stdout.write(`    ${label}: FAIL (${failed} failed, ${secs}s)  transcript → ${path.relative(ROOT, logPath)}\n`);
-    reasons.slice(0, 10).forEach(l => process.stdout.write('        ' + l + '\n'));
-    if (!reasons.length) process.stdout.write('        ' + out.split('\n').slice(-6).join('\n        ') + '\n');
-  } else {
-    process.stdout.write(`    ${label}: PASS ${passed}/${total} (${secs}s)\n`);
-  }
-  return { clean, passed, total, failed, secs, reasons: clean ? undefined : reasons };
-}
-
-/**
- * Return data/groups.json to its committed baseline.
- * The suites rewrite it as part of the 256-group simulation, which otherwise
- * leaves the working tree permanently dirty and each attempt starting from
- * whatever the previous one happened to leave behind. Restoring between
- * attempts also makes every attempt start from identical state.
- */
-function restoreData() {
-  const r = spawnSync('git', ['checkout', '--', 'data/groups.json'], { cwd: ROOT, encoding: 'utf8' });
-  if (r.status !== 0) process.stdout.write(`    (could not restore data/groups.json: ${(r.stderr || '').trim()})\n`);
-}
-
-function certify(name, args) {
-  let streak = 0, attempts = 0;
-  const history = [];
-  while (streak < TARGET && attempts < MAX_TRIES) {
-    attempts++;
-    restoreData();
-    const r = run(args, `attempt ${attempts} (streak ${streak}/${TARGET})`);
-    history.push({ attempt: attempts, ...r, clean: r.clean });
-    if (r.clean) streak++;
-    else {
-      if (streak > 0) process.stdout.write(`    ↺ streak reset ${streak} → 0\n`);
-      streak = 0;
-    }
-  }
-  const certified = streak >= TARGET;
-  process.stdout.write(`  ${certified ? '✅' : '❌'} ${name}: ${streak}/${TARGET} consecutive clean` +
-                       ` (${attempts} attempt${attempts === 1 ? '' : 's'})\n\n`);
-  return { name, certified, streak, attempts, history };
+  const reasons = out.split('\n').filter(l => l.includes('✗')).map(l => l.trim()).slice(0, 12);
+  return { label, clean, passed, total, failed, secs, out, reasons };
 }
 
 (async () => {
-  const argv    = process.argv.slice(2);
-  const doLangs  = argv.includes('--languages') || argv.length === 0;
-  const doGlobal = argv.includes('--global')    || argv.length === 0;
-  const only     = (argv.find(a => a.startsWith('--only=')) || '').split('=')[1];
-
-  const ledger = { startedAt: new Date().toISOString(), languages: [], global: null };
   const t0 = Date.now();
+  fs.mkdirSync(LOGDIR, { recursive: true });
 
-  if (doLangs) {
-    const targets = only ? only.split(',') : LANGS;
-    process.stdout.write(`\n${'█'.repeat(66)}\n`);
-    process.stdout.write(`PHASE 1 — per-language certification (${targets.length} locales × ${TARGET} clean)\n`);
-    process.stdout.write(`${'█'.repeat(66)}\n\n`);
-    for (const lang of targets) {
-      process.stdout.write(`── ${lang} ${'─'.repeat(Math.max(0, 56 - lang.length))}\n`);
-      ledger.languages.push(certify(lang, [path.join('tests', 'language-audit.js'), `--lang=${lang}`]));
-      fs.writeFileSync(LEDGER, JSON.stringify(ledger, null, 2));
+  const plan = [];
+  for (const lang of LANGS) {
+    for (let i = 1; i <= PER_LANG; i++) {
+      plan.push({ kind: 'lang', lang, n: i, label: `${lang} P${i}`,
+                  args: [path.join('tests', 'language-audit.js'), `--lang=${lang}`] });
     }
   }
-
-  if (doGlobal) {
-    process.stdout.write(`\n${'█'.repeat(66)}\n`);
-    process.stdout.write(`PHASE 2 — global certification (${TARGET} consecutive clean full-system passes)\n`);
-    process.stdout.write(`${'█'.repeat(66)}\n\n`);
-    ledger.global = certify('GLOBAL', [path.join('tests', 'global-audit.js')]);
-    fs.writeFileSync(LEDGER, JSON.stringify(ledger, null, 2));
+  for (let i = 1; i <= GLOBAL_PASSES; i++) {
+    plan.push({ kind: 'global', n: i, label: `Global P${i}`,
+                args: [path.join('tests', 'global-audit.js')] });
   }
 
-  // ── report ────────────────────────────────────────────────────────────────
+  process.stdout.write(`\n${'█'.repeat(70)}\n`);
+  process.stdout.write(`CERTIFICATION — ${TARGET} consecutive clean passes required\n`);
+  process.stdout.write(`${LANGS.length} languages × ${PER_LANG} + ${GLOBAL_PASSES} global, frozen order, English first\n`);
+  process.stdout.write(`${'█'.repeat(70)}\n\n`);
+
+  let streak = 0;
+  const log = [];
+  let broke = null;
+
+  for (const step of plan) {
+    const r = runPass(step.args, step.label);
+    if (r.clean) {
+      streak++;
+      log.push({ label: step.label, result: 'PASS', streak, passed: r.passed, total: r.total, secs: r.secs });
+      process.stdout.write(`  ${String(streak).padStart(2)}/54  ${step.label.padEnd(14)} PASS  ${r.passed}/${r.total}  (${r.secs}s)\n`);
+    } else {
+      const slug = step.label.replace(/[^\w.-]+/g, '_');
+      const logPath = path.join(LOGDIR, `${slug}.log`);
+      fs.writeFileSync(logPath, r.out);
+      log.push({ label: step.label, result: 'FAIL', streakBefore: streak, failed: r.failed,
+                 secs: r.secs, reasons: r.reasons, transcript: path.relative(ROOT, logPath) });
+      process.stdout.write(`\n  ✗ ${step.label} FAILED after ${streak} clean passes (${r.failed} failed, ${r.secs}s)\n`);
+      r.reasons.forEach(l => process.stdout.write(`      ${l}\n`));
+      process.stdout.write(`      transcript → ${path.relative(ROOT, logPath)}\n`);
+      process.stdout.write(`\n  Streak reset ${streak} → 0. The sequence must restart from Pass 1 (${LANGS[0]} P1).\n`);
+      broke = { at: step.label, after: streak, reasons: r.reasons };
+      streak = 0;
+      break;   // abort: every later pass would have to be re-earned anyway
+    }
+    fs.writeFileSync(LEDGER, JSON.stringify({ startedAt: new Date(t0).toISOString(), streak, log, broke }, null, 2));
+  }
+
+  fs.writeFileSync(LEDGER, JSON.stringify({ startedAt: new Date(t0).toISOString(), streak, log, broke }, null, 2));
+
   const mins = ((Date.now() - t0) / 60000).toFixed(1);
-  process.stdout.write(`${'█'.repeat(66)}\nCERTIFICATION SUMMARY  (${mins} min)\n${'█'.repeat(66)}\n\n`);
-
-  let cleanLangPasses = 0, allCertified = true;
-  if (ledger.languages.length) {
-    for (const l of ledger.languages) {
-      cleanLangPasses += l.streak;
-      if (!l.certified) allCertified = false;
-      const marks = l.history.map(h => h.clean ? '●' : '✗').join('');
-      process.stdout.write(`  ${l.certified ? '✅' : '❌'} ${l.name.padEnd(9)} ${l.streak}/${TARGET}  [${marks}]\n`);
-    }
-    process.stdout.write(`\n  counted clean language passes: ${cleanLangPasses} / ${ledger.languages.length * TARGET}\n`);
+  process.stdout.write(`\n${'█'.repeat(70)}\n`);
+  if (streak === TARGET) {
+    process.stdout.write(`CERTIFIED — ${streak}/${TARGET} consecutive clean passes, no failure in the sequence\n`);
+  } else if (broke) {
+    process.stdout.write(`NOT CERTIFIED — sequence broke at ${broke.at} after ${broke.after} clean passes\n`);
+  } else {
+    process.stdout.write(`INCOMPLETE — ${streak}/${TARGET}\n`);
   }
-  if (ledger.global) {
-    const marks = ledger.global.history.map(h => h.clean ? '●' : '✗').join('');
-    process.stdout.write(`\n  ${ledger.global.certified ? '✅' : '❌'} GLOBAL    ${ledger.global.streak}/${TARGET}  [${marks}]\n`);
-    if (!ledger.global.certified) allCertified = false;
-  }
-
-  const totalClean = cleanLangPasses + (ledger.global ? ledger.global.streak : 0);
-  process.stdout.write(`\n  TOTAL COUNTED CLEAN PASSES: ${totalClean}\n`);
-  process.stdout.write(`  ledger → ${path.relative(ROOT, LEDGER)}\n`);
-  process.stdout.write(`${'█'.repeat(66)}\n`);
-  restoreData();   // leave the working tree as we found it
-  process.exitCode = allCertified ? 0 : 1;
+  process.stdout.write(`elapsed ${mins} min · ledger → ${path.relative(ROOT, LEDGER)}\n`);
+  process.stdout.write(`${'█'.repeat(70)}\n`);
+  process.exitCode = streak === TARGET ? 0 : 1;
 })();
