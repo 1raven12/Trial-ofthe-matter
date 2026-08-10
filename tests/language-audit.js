@@ -252,22 +252,58 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
   if (!badMath.length) ok('C7 score reconstructs exactly from its components for all completed groups');
   else ko('C7 score/component mismatch', `${badMath.length}: ${badMath.slice(0,4).join('; ')}`);
 
-  // Unplayed groups must be an explicit empty state, never zeroes.
-  const zeroed = board.filter(r => !r.played && (r.score === 0 || r.mistakes === 0 || r.durationSec === 0));
-  if (!zeroed.length) ok('C8 unplayed groups carry a null empty state, not misleading zeroes');
-  else ko('C8 unplayed shown as zeroes', zeroed.slice(0,4).map(r => r.groupId).join(', '));
+  // Unplayed groups: reset two so the empty-state path is genuinely exercised
+  // on every pass rather than only when the fixture happens to leave a gap.
+  await post('/api/admin/reset', { groupId: 'g7' },   tok);
+  await post('/api/admin/reset', { groupId: 'g200' }, tok);
+  const board2 = (await get('/api/leaderboard', tok)).body;
+
+  if (board2.length === 256) ok('C8 all 256 groups still represented after two resets');
+  else ko('C8 roster shrank after reset', `got ${board2.length}`);
+
+  const nowUnplayed = board2.filter(r => !r.played).map(r => r.groupId);
+  if (nowUnplayed.includes('g7') && nowUnplayed.includes('g200')) ok('C9 reset groups appear as unplayed, still listed');
+  else ko('C9 reset groups missing from board', nowUnplayed.slice(0, 6).join(', '));
+
+  const zeroed = board2.filter(r => !r.played &&
+    (r.score === 0 || r.mistakes === 0 || r.durationSec === 0 || r.completedAt !== null));
+  if (!zeroed.length) ok('C10 unplayed groups carry a null empty state, never misleading zeroes');
+  else ko('C10 unplayed shown as zeroes', zeroed.slice(0, 4).map(r => r.groupId).join(', '));
+
+  const lastPlayedIdx = board2.map(r => r.played).lastIndexOf(true);
+  const firstUnplayedIdx = board2.findIndex(r => !r.played);
+  if (firstUnplayedIdx === -1 || firstUnplayedIdx > lastPlayedIdx) ok('C11 unplayed groups sorted below every completed group');
+  else ko('C11 unplayed outranks completed', `firstUnplayed=${firstUnplayedIdx} lastPlayed=${lastPlayedIdx}`);
+
+  if (board2.filter(r => r.played).every((r, i) => r.rank === i + 1)) ok('C12 ranks contiguous from 1 over completed groups; unplayed unranked');
+  else ko('C12 rank numbering broken');
 
   // ── D. locking: 1–255 lock, 256 does not ──────────────────────────────────
   sec(`D. locking — ${lang}`);
-  let locked = 0, leaks = [];
+  // g7 and g200 were reset above, so they must now be playable again; every
+  // other non-trial group must still refuse to issue a token. Checking both
+  // halves in the same sweep proves the lock holds AND that reset lifts it.
+  const RESET_BACK = new Set(['g7', 'g200']);
+  let locked = 0, unlocked = 0;
+  const leaks = [], stuck = [];
   for (const g of data.groups) {
     if (g.id === TRIAL) continue;
     const r = await post('/api/login', { groupId: g.id, pin: g.pin, groupSize: 3 });
-    if (r.status === 200 && r.body.status === 'completed' && !r.body.token) locked++;
-    else if (leaks.length < 6) leaks.push(`${g.id}:${r.status}`);
+    const isLocked = r.status === 200 && r.body.status === 'completed' && !r.body.token;
+    if (RESET_BACK.has(g.id)) {
+      if (r.status === 200 && r.body.token) unlocked++;
+      else stuck.push(`${g.id}:${r.status}`);
+    } else if (isLocked) {
+      locked++;
+    } else if (leaks.length < 6) {
+      leaks.push(`${g.id}:${r.status}`);
+    }
   }
-  if (locked === 255 && !leaks.length) ok('D1 all 255 groups locked after first completion, no token issued');
-  else ko('D1 lock enforcement', `locked=${locked}/255 leaks=${leaks.join(',')}`);
+  const expectLocked = 255 - RESET_BACK.size;
+  if (locked === expectLocked && !leaks.length) ok(`D1 all ${expectLocked} completed groups locked, no token issued`);
+  else ko('D1 lock enforcement', `locked=${locked}/${expectLocked} leaks=${leaks.join(',')}`);
+  if (unlocked === RESET_BACK.size && !stuck.length) ok(`D1b the ${RESET_BACK.size} reset groups are playable again`);
+  else ko('D1b reset did not unlock', `unlocked=${unlocked}/${RESET_BACK.size} stuck=${stuck.join(',')}`);
 
   const t256 = await post('/api/login', { groupId: TRIAL, pin: TRIAL_PIN, groupSize: 3 });
   if (t256.status === 200 && t256.body.token) ok('D2 g256 still playable (never permanently locked)');

@@ -507,6 +507,38 @@ async function auditLeaderboardUI(adminToken) {
     if (rowCount === 256) ok(`5.1: Admin leaderboard UI renders ${rowCount} rows (all 256)`);
     else ko('5.1: Admin leaderboard UI row count', `expected 256, got ${rowCount}`);
 
+    // 5.1b: every required column is present in the rendered header
+    const NEEDED = ['Rank','Group','Score','Duration','Mistakes','Mistake','Hints','Hint',
+                    'Early','Overtime','Time','Completed'];
+    const heads = await page.$$eval('.lb-table thead th', th => th.map(t => t.textContent.trim()));
+    const missingCol = NEEDED.filter(n => !heads.some(h => h.includes(n)));
+    if (!missingCol.length) ok(`5.1b: scoreboard exposes all required columns (${heads.length} shown)`);
+    else ko('5.1b: missing scoreboard columns', missingCol.join(', '));
+
+    // 5.1c: named groups spread across the range must each be reachable by
+    // scrolling — proving the board is not truncated at some page size
+    for (const n of [1, 128, 255, 256]) {
+      const r = await page.evaluate(num => {
+        const row = [...document.querySelectorAll('#lb-body tr')]
+          .find(t => new RegExp('^Group ' + num + '(\\D|$)').test((t.querySelector('.name-cell')?.textContent || '').trim()));
+        if (!row) return { found: false };
+        row.scrollIntoView({ block: 'center' });
+        const b = row.getBoundingClientRect();
+        return { found: true, reachable: b.top >= -1 && b.bottom <= window.innerHeight + 1 };
+      }, n);
+      if (r.found && r.reachable) ok(`5.1c: Group ${n} present and reachable in the scoreboard`);
+      else ko(`5.1c: Group ${n} not reachable`, JSON.stringify(r));
+    }
+
+    // 5.1d: unplayed groups render an explicit empty state, not zeroes
+    const unplayed = await page.$$eval('#lb-body tr.lb-unplayed', rows =>
+      rows.map(r => r.textContent.replace(/\s+/g, ' ').trim()).slice(0, 3));
+    if (!unplayed.length || unplayed.every(t => /Not played/i.test(t))) {
+      ok(`5.1d: unplayed groups show an explicit empty state (${unplayed.length ? unplayed.length + ' sampled' : 'none present'})`);
+    } else {
+      ko('5.1d: unplayed empty state', unplayed.join(' | '));
+    }
+
     // Check last row is visible (scroll to it)
     const lastRowText = await page.$eval('#lb-body tr:last-child', r => r.textContent.trim().slice(0, 60));
     if (lastRowText.length > 0) ok(`5.2: Last leaderboard row accessible: "${lastRowText}"`);
