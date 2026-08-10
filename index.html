@@ -67,6 +67,7 @@
     .lb-score { color: var(--accent2); font-weight: bold; }
     .lb-group { color: var(--text); font-weight: bold; }
     .login-theme { font-size: 0.62rem; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 18px; opacity: 0.75; }
+
   </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -599,6 +600,44 @@
     [dir="rtl"] #lobby-status { text-align: right; }
     [dir="rtl"] #demo-pw-box { text-align: right; }
     [dir="rtl"] .choice-btn { text-align: right; }
+    /* ── Full-screen layer scrolling ──────────────────────────────────────────
+       A fixed, viewport-sized flex container that centres its children overflows
+       in BOTH directions once the content is taller than the viewport, and the
+       part that spills past the start edge is unreachable — scrollTop cannot go
+       negative. The screen then looked frozen: no scrolling up, and no way to
+       scroll down to the Start / Continue button. It only reproduced when the
+       content happened to exceed the viewport, which is why it appeared
+       intermittent and hit the wordier locales and shorter windows first.
+       Zooming out to ~25% shrank the content until it fit again, which is the
+       workaround players found.
+
+       `safe center` centres while the content fits and falls back to start
+       alignment the moment it does not, so nothing is ever placed out of reach.
+       The plain `flex-start` line before it is the baseline for engines without
+       `safe`: they drop the invalid declaration and keep a fully scrollable
+       start-aligned layout, which degrades in appearance but never in reach. */
+    #login-screen,
+    #startscreen,
+    #endscreen,
+    #already-played-screen {
+      justify-content: flex-start;
+      justify-content: safe center;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    /* Same hazard on the cross axis for the single-box overlays. */
+    #modal-overlay,
+    #lb-overlay,
+    #pause-overlay,
+    #alarm-overlay {
+      align-items: flex-start;
+      align-items: safe center;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    /* These two were the only boxes with no height ceiling of their own. */
+    #pause-box, #alarm-box { max-height: 92vh; overflow-y: auto; }
   </style>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/translations.js"></script>
