@@ -42,7 +42,15 @@ function run(args, label) {
     .filter(l => l.startsWith('✗') || l.startsWith('→') || /^\d+\.\s/.test(l))
     .slice(0, 20);
   if (!clean) {
-    process.stdout.write(`    ${label}: FAIL (${failed} failed, ${secs}s)\n`);
+    // Persist the child's complete output. The filtered reasons are enough for a
+    // normal assertion failure, but a suite that dies without a summary leaves
+    // nothing to filter — that transcript is the only record of why.
+    const logDir = path.join(ROOT, 'tests', 'failure-logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const slug = (args.join(' ') + ' ' + label).replace(/[^\w.-]+/g, '_').slice(0, 80);
+    const logPath = path.join(logDir, `${slug}.log`);
+    fs.writeFileSync(logPath, out);
+    process.stdout.write(`    ${label}: FAIL (${failed} failed, ${secs}s)  transcript → ${path.relative(ROOT, logPath)}\n`);
     reasons.slice(0, 10).forEach(l => process.stdout.write('        ' + l + '\n'));
     if (!reasons.length) process.stdout.write('        ' + out.split('\n').slice(-6).join('\n        ') + '\n');
   } else {

@@ -72,6 +72,26 @@ async function loginPlayer(groupId, pin, groupSize, memberName) {
   return r.body.token;
 }
 
+// Load the login page and wait for initLogin() to populate the group dropdown.
+// Retries once at a longer budget: the dropdown is filled from /api/groups, and
+// under a back-to-back suite run that fetch can exceed a single 10s window. A
+// slow load is a timing artefact of the harness, not a product defect.
+async function loadHome(page, tries = 2) {
+  let lastErr;
+  for (let i = 1; i <= tries; i++) {
+    try {
+      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForFunction(
+        () => document.getElementById('group-select') &&
+              document.getElementById('group-select').options.length > 1,
+        { timeout: 20000 }
+      );
+      return;
+    } catch (e) { lastErr = e; await page.waitForTimeout(750 * i); }
+  }
+  throw lastErr;
+}
+
 // Connect a socket and wait for state_init
 function connectSocket(token, memberName) {
   return new Promise((resolve, reject) => {
@@ -90,13 +110,7 @@ async function testLoginEdgeCases(browser) {
   section('A — Login edge cases');
   const ctx  = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  // Wait for initLogin() to finish populating the group dropdown
-  await page.waitForFunction(
-    () => document.getElementById('group-select') &&
-          document.getElementById('group-select').options.length > 1,
-    { timeout: 10000 }
-  );
+  await loadHome(page);
 
   // A1: No group selected
   await page.fill('#member-name', 'Alice');
@@ -144,12 +158,7 @@ async function testDemoMode(browser) {
   section('B — Demo mode');
   const ctx  = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   const page = await ctx.newPage();
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(
-    () => document.getElementById('group-select') &&
-          document.getElementById('group-select').options.length > 1,
-    { timeout: 10000 }
-  );
+  await loadHome(page);
 
   // B1: Wrong demo password
   await page.click('#demo-link');
@@ -229,12 +238,7 @@ async function testLanguages(browser) {
   const errors = [];
 
   for (const lang of LANGS) {
-    await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(
-      () => document.getElementById('group-select') &&
-            document.getElementById('group-select').options.length > 1,
-      { timeout: 10000 }
-    );
+    await loadHome(page);
     await page.selectOption('#lang-select', lang);
     await page.waitForTimeout(300);
 
@@ -279,12 +283,7 @@ async function testGameFlow(browser) {
   page.on('console', msg => { if (msg.type() === 'error') jsErrors.push(msg.text()); });
   page.on('pageerror', err => jsErrors.push(err.message));
 
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(
-    () => document.getElementById('group-select') &&
-          document.getElementById('group-select').options.length > 1,
-    { timeout: 10000 }
-  );
+  await loadHome(page);
 
   // Enter demo mode
   await page.click('#demo-link');
@@ -705,12 +704,7 @@ async function testNetworkHandling(browser) {
   const ctx  = await browser.newContext({ viewport: { width: 1200, height: 800 } });
   const page = await ctx.newPage();
 
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(
-    () => document.getElementById('group-select') &&
-          document.getElementById('group-select').options.length > 1,
-    { timeout: 10000 }
-  );
+  await loadHome(page);
 
   // K1: Test that apiCall timeout guard is in the code
   const hasAbortController = await page.evaluate(() => {
@@ -886,23 +880,40 @@ async function testAdminOperations() {
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
 
+  // Each section is isolated. Previously all 14 ran inside one try/finally, so a
+  // single transient fault — a Playwright context closing mid-navigation, say —
+  // propagated out of the IIFE and killed the process before the summary block,
+  // discarding the results of every section that had already passed. Aggregators
+  // then saw "no result line, exit 1" with no way to tell what went wrong.
+  // Now a throwing section is recorded as a failure and the run continues, so the
+  // suite always reports what it observed.
+  const SECTIONS = [
+    ['A login edge cases',     () => testLoginEdgeCases(browser)],
+    ['B demo mode',            () => testDemoMode(browser)],
+    ['C languages',            () => testLanguages(browser)],
+    ['D game flow',            () => testGameFlow(browser)],
+    ['E scoring math',         () => testScoringMath()],
+    ['F group sizes',          () => testGroupSizes()],
+    ['G duplicate names',      () => testDuplicateNames()],
+    ['H leaderboard',          () => testLeaderboard()],
+    ['I end screen',           () => testEndScreen(browser)],
+    ['J state persistence',    () => testStatePersistence()],
+    ['K network handling',     () => testNetworkHandling(browser)],
+    ['L i18n completeness',    () => testI18nCompleteness()],
+    ['M scoring formula',      () => testScoringFormula()],
+    ['N admin operations',     () => testAdminOperations()],
+  ];
+
   try {
-    await testLoginEdgeCases(browser);
-    await testDemoMode(browser);
-    await testLanguages(browser);
-    await testGameFlow(browser);
-    await testScoringMath();
-    await testGroupSizes();
-    await testDuplicateNames();
-    await testLeaderboard();
-    await testEndScreen(browser);
-    await testStatePersistence();
-    await testNetworkHandling(browser);
-    await testI18nCompleteness();
-    await testScoringFormula();
-    await testAdminOperations();
+    for (const [name, fn] of SECTIONS) {
+      try {
+        await fn();
+      } catch (e) {
+        ko(`${name}: section threw`, e && e.message ? e.message.split('\n')[0] : String(e));
+      }
+    }
   } finally {
-    await browser.close();
+    try { await browser.close(); } catch { /* browser may already be gone */ }
   }
 
   // Summary
