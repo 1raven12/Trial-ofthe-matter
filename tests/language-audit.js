@@ -189,40 +189,73 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
 
   const lb = await get('/api/leaderboard', tok);
   const board = lb.body;
-  if (board.length === 256) ok('C2 scoreboard returns exactly 256 records');
+  if (board.length === 256) ok('C2 scoreboard represents all 256 groups');
   else ko('C2 scoreboard count', `expected 256, got ${board.length}`);
 
   const ids = board.map(r => r.groupId);
   const uniq = new Set(ids);
   const dupes = ids.filter((v, i) => ids.indexOf(v) !== i);
-  if (uniq.size === 256 && !dupes.length) ok('C3 256 unique groups, 0 duplicates, 0 missing');
-  else ko('C3 uniqueness', `unique=${uniq.size} dupes=${[...new Set(dupes)].slice(0,6).join(',')}`);
+  const missing = Array.from({ length: 256 }, (_, i) => `g${i + 1}`).filter(g => !uniq.has(g));
+  if (uniq.size === 256 && !dupes.length && !missing.length) ok('C3 256 unique groups, 0 duplicates, 0 missing');
+  else ko('C3 uniqueness', `unique=${uniq.size} dupes=${[...new Set(dupes)].slice(0,6).join(',')} missing=${missing.slice(0,6).join(',')}`);
 
-  let match = 0, mismatch = [];
+  let match = 0; const mismatch = [];
   for (const row of board) {
     if (row.score === expected[row.groupId].score) match++;
     else mismatch.push(`${row.groupId} exp=${expected[row.groupId].score} got=${row.score}`);
   }
-  if (match === 256) ok(`C4 expected-vs-actual score match 256/256`);
+  if (match === 256) ok('C4 expected-vs-actual score match 256/256');
   else ko('C4 score mismatches', `${mismatch.length}: ${mismatch.slice(0, 5).join('; ')}`);
 
-  let sorted = true;
+  // Ranking: played above unplayed; ties resolved down a fixed chain so the
+  // order is reproducible rather than merely "sorted by score".
+  const groupNo = id => parseInt(String(id).replace(/^g/, ''), 10);
+  let sorted = true, why = '';
   for (let i = 1; i < board.length; i++) {
-    if (board[i].score > board[i - 1].score) { sorted = false; break; }
-    if (board[i].score === board[i - 1].score &&
-        new Date(board[i].completedAt) < new Date(board[i - 1].completedAt)) { sorted = false; break; }
+    const a = board[i - 1], b = board[i];
+    if (a.played !== b.played) { if (!a.played && b.played) { sorted = false; why = `unplayed ${a.groupId} ranked above played ${b.groupId}`; break; } continue; }
+    if (!a.played) continue;
+    const chain = [
+      [b.score, a.score], [a.mistakes, b.mistakes], [a.hintsUsed, b.hintsUsed],
+      [a.durationSec, b.durationSec],
+      [new Date(a.completedAt).getTime(), new Date(b.completedAt).getTime()],
+      [groupNo(a.groupId), groupNo(b.groupId)],
+    ];
+    for (const [x, y] of chain) { if (x !== y) { if (x > y) { sorted = false; why = `${a.groupId} vs ${b.groupId}`; } break; } }
+    if (!sorted) break;
   }
-  if (sorted) ok('C5 sorted best→worst, ties by earliest completion');
-  else ko('C5 sort order violated');
+  if (sorted) ok('C5 ranked best→worst with a deterministic tie-break chain; unplayed never outrank played');
+  else ko('C5 ranking violated', why);
 
-  // components must be carried through independently, not re-derived
-  const compBad = board.filter(r => {
-    const e = expected[r.groupId];
-    return r.wrongAnswers !== e.wrongAnswers || r.hintPenalty !== e.hintPenalty
-        || r.secondsRemaining !== e.timerSec  || r.timeSpentSec !== MAX_SECS - e.timerSec;
-  });
-  if (!compBad.length) ok('C6 mistake count, hint penalty and elapsed time stored independently for all 256');
-  else ko('C6 component drift', compBad.slice(0, 4).map(r => r.groupId).join(', '));
+  // Every scoreboard row must carry the components that explain its score, and
+  // those components must reconstruct it exactly — the board may not display a
+  // figure the engine did not produce.
+  const REQUIRED = ['rank','groupId','name','score','mistakes','mistakePenalty','hintsUsed','hintPenalty',
+                    'durationSec','earlyFinishSec','earlyFinishReward','overtimeSec','overtimeMin',
+                    'timePenalty','completedAt','played'];
+  const missingField = board.filter(r => REQUIRED.some(f => !(f in r)));
+  if (!missingField.length) ok(`C6 every row exposes all ${REQUIRED.length} scoreboard fields`);
+  else ko('C6 missing scoreboard fields', missingField.slice(0,3).map(r => r.groupId).join(', '));
+
+  const badMath = [];
+  for (const r of board.filter(x => x.played)) {
+    const e = r.overtimeSec > 0;
+    const rebuilt = Math.max(0, r.puzzlesDone * (e ? 180 : 200) + r.earlyFinishReward
+      + expected[r.groupId].hiddenBonus - r.mistakePenalty - r.hintPenalty - r.timePenalty);
+    if (rebuilt !== r.score) badMath.push(`${r.groupId} rebuilt=${rebuilt} score=${r.score}`);
+    const exp = expected[r.groupId];
+    if (r.mistakes !== exp.wrongAnswers || r.hintPenalty !== exp.hintPenalty
+        || r.durationSec !== MAX_SECS - exp.timerSec || r.secondsRemaining !== exp.timerSec) {
+      badMath.push(`${r.groupId} component drift`);
+    }
+  }
+  if (!badMath.length) ok('C7 score reconstructs exactly from its components for all completed groups');
+  else ko('C7 score/component mismatch', `${badMath.length}: ${badMath.slice(0,4).join('; ')}`);
+
+  // Unplayed groups must be an explicit empty state, never zeroes.
+  const zeroed = board.filter(r => !r.played && (r.score === 0 || r.mistakes === 0 || r.durationSec === 0));
+  if (!zeroed.length) ok('C8 unplayed groups carry a null empty state, not misleading zeroes');
+  else ko('C8 unplayed shown as zeroes', zeroed.slice(0,4).map(r => r.groupId).join(', '));
 
   // ── D. locking: 1–255 lock, 256 does not ──────────────────────────────────
   sec(`D. locking — ${lang}`);
@@ -258,13 +291,18 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
     const b = (await get('/api/leaderboard', tok)).body.filter(r => r.groupId === TRIAL);
     if (b.length === 1) ok('E4 exactly one scoreboard record after 3 plays');
     else ko('E4 duplicate trial records', `got ${b.length}`);
-    if (b[0] && b[0].score === p1.score) ok(`E5 official result still the first play (${p1.score}); replays did not overwrite`);
-    else ko('E5 first result overwritten', `board=${b[0]?.score} p1=${p1.score}`);
+    if (b[0] && b[0].score === p3.score) ok(`E5 the single record carries the latest replay (${p3.score}), not the first (${p1.score})`);
+    else ko('E5 trial record not updated by replay', `board=${b[0]?.score} latest=${p3.score} first=${p1.score}`);
 
     await post('/api/admin/reset', { groupId: TRIAL }, tok);
+    // Every group stays represented on the board, so a reset does not remove the
+    // row — it returns it to the unplayed empty state with its result cleared.
     const after = (await get('/api/leaderboard', tok)).body.filter(r => r.groupId === TRIAL);
-    if (!after.length) ok('E6 admin reset clears the trial group from the scoreboard');
-    else ko('E6 reset did not clear', `${after.length} rows`);
+    if (after.length === 1 && after[0].played === false && after[0].score === null && after[0].rank === null) {
+      ok('E6 admin reset returns the trial group to the unplayed state, row still represented');
+    } else {
+      ko('E6 reset did not clear the result', `rows=${after.length} played=${after[0]?.played} score=${after[0]?.score}`);
+    }
 
     const p4 = await playTrial({ wrong: 1 });
     const b4 = (await get('/api/leaderboard', tok)).body.filter(r => r.groupId === TRIAL);

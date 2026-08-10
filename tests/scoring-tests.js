@@ -320,7 +320,7 @@ async function testGroup256ScorePreservation() {
     'motto_production','motto_qaoffice','batch_retrieved','game_won',
   ];
 
-  async function playQuickGame() {
+  async function playQuickGame(wrongAnswers = 0) {
     const tokens = [];
     for (let i = 0; i < 3; i++) {
       const r = await httpPost('/api/login', { groupId: TRIAL_GRP, pin: TRIAL_PIN, groupSize: 3 });
@@ -337,6 +337,13 @@ async function testGroup256ScorePreservation() {
     for (const { sock } of sockets) sock.emit('player_ready');
     await started;
 
+    // Distinct mistake counts give the two plays distinct scores, so the
+    // assertion below can actually tell first from latest.
+    for (let i = 0; i < wrongAnswers; i++) {
+      sockets[0].sock.emit('wrong_answer');
+      await new Promise(r => setTimeout(r, 260));
+    }
+
     for (const key of PUZZLE_KEYS) {
       for (const { sock } of sockets) sock.emit('player_puzzle_done', { key });
       await new Promise(r => setTimeout(r, 80));
@@ -349,15 +356,15 @@ async function testGroup256ScorePreservation() {
     return sub.body.score;
   }
 
-  const score1 = await playQuickGame();
-  ok(`S4a: Play 1 completed — score=${score1}`);
+  const score1 = await playQuickGame(0);
+  ok(`S4a: Play 1 completed, no mistakes — score=${score1}`);
 
   // No admin reset between plays — g256 should allow natural replay (server clears
   // stale session on player_ready for trial groups in completed state)
   await new Promise(r => setTimeout(r, 800));
 
-  const score2 = await playQuickGame();
-  ok(`S4b: Play 2 completed — score=${score2}`);
+  const score2 = await playQuickGame(3);
+  ok(`S4b: Play 2 completed, 3 mistakes — score=${score2}`);
 
   // Leaderboard must show only 1 entry for g256 with the FIRST score
   const lb = await httpGet('/api/leaderboard', adminToken);
@@ -367,9 +374,15 @@ async function testGroup256ScorePreservation() {
     return;
   }
   const lbScore = entries[0].score;
-  if (lbScore === score1) ok(`S4c: Leaderboard shows first score (${lbScore}) — second score ${score2} correctly discarded`);
-  else if (lbScore === score2) ko('S4c: Score preservation FAILED', `leaderboard has score2=${score2} instead of score1=${score1}`);
-  else ko('S4c: Unexpected leaderboard score', `lb=${lbScore}, play1=${score1}, play2=${score2}`);
+  if (score1 === score2) {
+    ko('S4c: inconclusive', `both plays scored ${score1}; the mistake counts should have separated them`);
+  } else if (lbScore === score2) {
+    ok(`S4c: the single g256 record carries the latest play (${score2}), replacing ${score1}`);
+  } else if (lbScore === score1) {
+    ko('S4c: replay did not update the record', `leaderboard still shows the first score ${score1}, latest was ${score2}`);
+  } else {
+    ko('S4c: unexpected leaderboard score', `lb=${lbScore}, play1=${score1}, play2=${score2}`);
+  }
 }
 
 // ── main ────────────────────────────────────────────────────────────────────────

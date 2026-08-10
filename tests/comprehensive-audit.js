@@ -378,7 +378,7 @@ async function audit256GroupSimulation(adminToken) {
   const lb = await httpGet('/api/leaderboard', adminToken);
   if (lb.status !== 200) { ko('3.3: Leaderboard reachable', `status=${lb.status}`); return; }
   const board = lb.body;
-  if (board.length === 256) ok(`3.3: Leaderboard contains exactly 256 entries`);
+  if (board.length === 256) ok(`3.3: Leaderboard represents exactly 256 groups`);
   else ko('3.3: Leaderboard count', `expected 256, got ${board.length}`);
 
   // 3.4: Uniqueness — no duplicate groupIds
@@ -630,10 +630,11 @@ async function auditGroup256(adminToken) {
   else ko('7.6: g256 duplicate entries', `got ${g256entries2.length}`);
 
   // 7.7: First score preserved (not overwritten by Play 2)
-  if (g256entries2.length > 0 && g256entries2[0].score === score1) {
-    ok(`7.7: g256 official score still = Play 1 score (${score1}); Play 2 score (${score2}) discarded`);
+  // Group 256 keeps one row that carries its most recent completed result.
+  if (g256entries2.length > 0 && g256entries2[0].score === score2) {
+    ok(`7.7: g256 single record updated to the latest play (${score2}), replacing ${score1}`);
   } else {
-    ko('7.7: g256 score preservation', `lb=${g256entries2[0]?.score}, play1=${score1}, play2=${score2}`);
+    ko('7.7: g256 record not updated', `lb=${g256entries2[0]?.score}, play1=${score1}, play2=${score2}`);
   }
 
   // 7.8: Play 3 (without reset)
@@ -649,19 +650,23 @@ async function auditGroup256(adminToken) {
   await new Promise(r => setTimeout(r, 300));
   const lb3 = await httpGet('/api/leaderboard', adminToken);
   const g256entries3 = lb3.body.filter(e => e.groupId === 'g256');
-  if (g256entries3.length === 1 && g256entries3[0].score === score1) {
-    ok(`7.9: After 3 plays, still 1 entry, original score ${score1} intact`);
+  if (g256entries3.length === 1 && g256entries3[0].score === score3) {
+    ok(`7.9: After 3 plays, still exactly 1 entry, carrying the latest score ${score3}`);
   } else {
-    ko('7.9', `entries=${g256entries3.length}, score=${g256entries3[0]?.score}, expected=${score1}`);
+    ko('7.9', `entries=${g256entries3.length}, score=${g256entries3[0]?.score}, expected=${score3}`);
   }
 
   // 7.10: Admin reset clears g256's official score
   await httpPost('/api/admin/reset', { groupId: 'g256' }, adminToken);
   await new Promise(r => setTimeout(r, 300));
   const lb4 = await httpGet('/api/leaderboard', adminToken);
+  // The row stays — every group is always represented — but its result clears.
   const g256entries4 = lb4.body.filter(e => e.groupId === 'g256');
-  if (g256entries4.length === 0) ok('7.10: After admin reset, g256 removed from leaderboard');
-  else ko('7.10: g256 not cleared', `still ${g256entries4.length} entries`);
+  if (g256entries4.length === 1 && g256entries4[0].played === false && g256entries4[0].score === null) {
+    ok('7.10: After admin reset, g256 returns to the unplayed state');
+  } else {
+    ko('7.10: g256 result not cleared', `rows=${g256entries4.length} played=${g256entries4[0]?.played} score=${g256entries4[0]?.score}`);
+  }
 
   // 7.11: After reset, g256 is still playable and creates new first score
   await new Promise(r => setTimeout(r, 300));

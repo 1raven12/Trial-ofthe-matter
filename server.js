@@ -309,10 +309,12 @@ app.post('/api/game/submit', requireGroup, (req, res) => {
 
   group.status = 'completed';
 
-  // Official score is set only on first completion (score === null).
-  // Subsequent replays by Group 256 (trial group) keep the original result.
+  // Groups 1–255 record their first completed result and keep it until an admin
+  // reset. Group 256 is the replay group: it keeps exactly one row, but that row
+  // carries its most recent completed result, so a replay updates it in place
+  // rather than being discarded or appended as a second row.
   const isFirstCompletion = (group.score === null || group.score === undefined);
-  if (isFirstCompletion) {
+  if (isFirstCompletion || group.trialGroup) {
     group.score            = score;
     group.puzzlesDone      = puzzlesDone;
     group.wrongAnswers     = wrongAnswers;
@@ -348,39 +350,88 @@ app.post('/api/game/submit', requireGroup, (req, res) => {
   res.json({ score, puzzlesDone, wrongAnswers, secondsRemaining: secsLeft, timeSpentSec, hiddenFound, hiddenCorrect, hiddenBonus });
 });
 
-// Admin-only leaderboard — one row per group (official first-completion score)
-// Groups 1–255 are permanently locked after first completion so they can only appear once.
-// Group 256 (trial group) may replay but its official scoreboard entry is fixed at first completion.
+// Admin-only leaderboard — exactly one row per group, all 256 always present.
+//
+// Every group is represented so the board can be reconciled against the roster:
+// groups that have not played carry played:false and null metrics rather than
+// zeroes, so an unplayed group is never mistaken for a team that scored nothing.
+//
+// Each row also carries the decomposition of its score. The components are
+// derived here, on the server, from the persisted result using the same
+// constants the scoring function uses, so the board cannot drift from the
+// engine or recompute a figure differently in the client.
+//
+// Groups 1–255 are locked after their first completion, so their row is fixed
+// until an admin reset. Group 256 may replay; its single row carries its most
+// recent completed result.
 app.get('/api/leaderboard', requireAdmin, (req, res) => {
   const data = load();
-  const rows = [];
 
-  data.groups.forEach(g => {
-    // Only include groups that have an official score (completed at least once since last reset)
-    if (g.score === null || g.score === undefined) return;
-    rows.push({
-      name:             g.name,
-      groupId:          g.id,
-      score:            g.score,
-      puzzlesDone:      g.puzzlesDone      || 0,
-      won:              !!g.won,
-      wrongAnswers:     g.wrongAnswers     || 0,
-      hintPenalty:      g.hintPenalty      || 0,
-      secondsRemaining: g.secondsRemaining || 0,
-      timeSpentSec:     g.timeSpentSec     || 0,
-      completedAt:      g.completedAt,
-      resumed:          !!g.resumed,
-      trialGroup:       !!g.trialGroup,
-      trialCount:       Array.isArray(g.trials) ? g.trials.length : 1,
-    });
+  const rows = data.groups.map(g => {
+    const played = g.score !== null && g.score !== undefined;
+    if (!played) {
+      return {
+        name: g.name, groupId: g.id, played: false, rank: null,
+        score: null, puzzlesDone: null, won: null,
+        mistakes: null, mistakePenalty: null,
+        hintsUsed: null, hintPenalty: null,
+        durationSec: null, secondsRemaining: null,
+        earlyFinishSec: null, earlyFinishReward: null,
+        overtimeSec: null, overtimeMin: null, timePenalty: null,
+        completedAt: null, resumed: false,
+        trialGroup: !!g.trialGroup, playCount: Array.isArray(g.trials) ? g.trials.length : 0,
+      };
+    }
+
+    const secsLeft   = g.secondsRemaining || 0;
+    const isOvertime = secsLeft < OT_THRESH;
+    const mistakes   = g.wrongAnswers || 0;
+    const hintPts    = g.hintPenalty  || 0;
+    const overtimeSec = isOvertime ? (OT_THRESH - secsLeft) : 0;
+    const earlySec    = isOvertime ? 0 : (secsLeft - OT_THRESH);
+
+    return {
+      name: g.name, groupId: g.id, played: true, rank: null,
+      score:             g.score,
+      puzzlesDone:       g.puzzlesDone || 0,
+      won:               !!g.won,
+      mistakes,
+      mistakePenalty:    mistakes * WRONG_PTS,
+      hintsUsed:         Math.round(hintPts / HINT_PTS),
+      hintPenalty:       hintPts,
+      durationSec:       g.timeSpentSec || 0,
+      secondsRemaining:  secsLeft,
+      earlyFinishSec:    earlySec,
+      earlyFinishReward: (g.won && !isOvertime) ? earlySec * 2 : 0,
+      overtimeSec,
+      overtimeMin:       Math.ceil(overtimeSec / 60),
+      timePenalty:       Math.ceil(overtimeSec / 60) * 30,
+      completedAt:       g.completedAt,
+      resumed:           !!g.resumed,
+      trialGroup:        !!g.trialGroup,
+      playCount:         Array.isArray(g.trials) ? g.trials.length : 1,
+    };
   });
 
-  // Sort: highest score first; ties broken by earliest completion time
+  // Completed groups rank above unplayed ones, which sit at the bottom and are
+  // never ranked — an empty result must not outrank a team that actually played.
+  // Ties resolve down a fixed chain so the order is reproducible run to run:
+  // score, then fewer mistakes, fewer hints, shorter duration, earlier finish,
+  // and finally group number so no two rows can ever compare equal.
+  const groupNo = id => parseInt(String(id).replace(/^g/, ''), 10) || 0;
   rows.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return new Date(a.completedAt) - new Date(b.completedAt);
+    if (a.played !== b.played) return a.played ? -1 : 1;
+    if (!a.played) return groupNo(a.groupId) - groupNo(b.groupId);
+    if (b.score !== a.score)           return b.score - a.score;
+    if (a.mistakes !== b.mistakes)     return a.mistakes - b.mistakes;
+    if (a.hintsUsed !== b.hintsUsed)   return a.hintsUsed - b.hintsUsed;
+    if (a.durationSec !== b.durationSec) return a.durationSec - b.durationSec;
+    const ta = new Date(a.completedAt).getTime(), tb = new Date(b.completedAt).getTime();
+    if (ta !== tb) return ta - tb;
+    return groupNo(a.groupId) - groupNo(b.groupId);
   });
 
+  rows.forEach((r, i) => { if (r.played) r.rank = i + 1; });
   res.json(rows);
 });
 
@@ -914,9 +965,9 @@ io.on('connection', (socket) => {
         const timeSpentSec = Math.round((Date.now() - (gs.startedAt || Date.now())) / 1000);
         const completedAt  = new Date().toISOString();
         group.status = 'completed';
-        // Official score is set only on first completion
+        // Same rule as /api/game/submit: first result for 1–255, latest for 256.
         const isFirstCompletion = (group.score === null || group.score === undefined);
-        if (isFirstCompletion) {
+        if (isFirstCompletion || group.trialGroup) {
           group.score            = score;
           group.puzzlesDone      = gs.puzzlesDone;
           group.wrongAnswers     = gs.wrongAnswers;
