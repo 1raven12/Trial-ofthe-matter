@@ -385,8 +385,7 @@ async function testGroup256ScorePreservation() {
 
   const total = pass + fail;
   process.stdout.write(`\n${'─'.repeat(50)}\n`);
-  process.stdout.write(`Scoring tests: ${pass}/${total} passed`);
-  if (fail > 0) process.stdout.write(`  (${fail} FAILED)`);
-  process.stdout.write('\n');
+  // Standard summary shape shared by every suite so aggregators can parse it.
+  process.stdout.write(`Scoring tests: ${pass}/${total} passed, ${fail} failed\n`);
   process.exitCode = fail > 0 ? 1 : 0;
 })();
