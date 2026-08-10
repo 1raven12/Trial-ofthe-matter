@@ -334,6 +334,26 @@ function auditCrossLanguageStructure(CORRECT) {
   for (const l of LANGS) for (const k of mottoKeys) if (!String(T[l][k] ?? '').includes('·')) bad.push(`${l}:${k}`);
   if (!bad.length) ok(`X4 motto block present in ${mottoKeys.length} blocks × ${LANGS.length} locales`);
   else ko('X4 motto block missing', `${bad.length}: ${bad.slice(0,12).join(', ')}`);
+
+  // X5: no locale may be rendered a different number of task blocks. The task
+  // prompt callout must not be gated on language — that made English render one
+  // block fewer than every other locale for the same task (QA findings 4 & 10).
+  const idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const modalFn = idx.slice(idx.indexOf('function openModal'), idx.indexOf('function openModal') + 1200);
+  const gated = /S\.lang\s*[!=]==?\s*['"]en['"]/.test(modalFn);
+  if (!gated) ok('X5 task prompt callout renders for every locale (no language gate in openModal)');
+  else ko('X5 task prompt gated by language', 'openModal() branches on S.lang — English renders fewer blocks');
+
+  // X6: every question key referenced by a task must resolve in every locale
+  const qKeys = [...idx.matchAll(/questionKey:\s*'([^']+)'/g)].map(m => m[1]);
+  const uniqQ = [...new Set(qKeys)];
+  const unresolved = [];
+  for (const l of LANGS) for (const q of uniqQ) {
+    const v = T[l][q];
+    if (v === undefined || String(v).trim() === '') unresolved.push(`${l}:${q}`);
+  }
+  if (!unresolved.length) ok(`X6 all ${uniqQ.length} task prompts resolve in all ${LANGS.length} locales`);
+  else ko('X6 unresolved task prompts', `${unresolved.length}: ${unresolved.slice(0,10).join(', ')}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -372,6 +392,40 @@ async function auditUI(langs) {
           document.documentElement.scrollWidth - document.documentElement.clientWidth);
         if (overflow <= 2) ok(`[${lang}] U3 no horizontal overflow`);
         else ko(`[${lang}] U3 horizontal overflow`, `${overflow}px`);
+
+        // task prompt callout must render in this locale (QA findings 4 & 10)
+        const prompt = await page.evaluate(() => {
+          openModal({ tag: 'AUDIT', title: 'audit', body: '<p>n</p>',
+                      questionKey: 'q.iso15378_2', noInput: true });
+          const el = document.getElementById('modal-body').querySelector('.modal-prompt');
+          const r = { has: !!el, len: el ? el.textContent.trim().length : 0 };
+          closeModal();
+          return r;
+        });
+        if (prompt.has && prompt.len > 8) ok(`[${lang}] U4 task prompt callout rendered (${prompt.len} chars)`);
+        else ko(`[${lang}] U4 task prompt callout missing`, JSON.stringify(prompt));
+
+        // every answer option must be rendered and visible for a choice task
+        const opts = await page.evaluate(() => {
+          openModal({ tag: 'AUDIT', title: 'audit', body: '<p>n</p>', questionKey: 'q.motto_dis',
+                      choices: tChoices('motto_dis', [
+                        { label: 'A', correct: false }, { label: 'B', correct: false },
+                        { label: 'C', correct: true  }, { label: 'D', correct: false }]),
+                      onChoice: () => {} });
+          const btns = [...document.querySelectorAll('#modal-choices button')];
+          const r = {
+            count: btns.length,
+            visible: btns.filter(b => b.offsetWidth > 0 && b.offsetHeight > 0).length,
+            empty:   btns.filter(b => !b.textContent.trim()).length,
+          };
+          closeModal();
+          return r;
+        });
+        if (opts.count === 4 && opts.visible === 4 && opts.empty === 0) {
+          ok(`[${lang}] U5 all 4 answer options rendered and visible`);
+        } else {
+          ko(`[${lang}] U5 answer option rendering`, JSON.stringify(opts));
+        }
       } catch (e) {
         ko(`[${lang}] UI fatal`, e.message);
       } finally {

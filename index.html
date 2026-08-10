@@ -467,6 +467,15 @@
     .plunger-ok   { background: #0d2a1e; border: 1.5px solid #00c97a; color: #00c97a; }
     .plunger-fail { background: #2a0d10; border: 1.5px solid #e63946; color: #e63946; }
 
+    /* Task prompt callout — rendered for every locale, English included. */
+    .modal-prompt {
+      margin-top: 14px; padding: 10px 14px;
+      background: rgba(0,153,230,0.1);
+      border-inline-start: 3px solid var(--accent);
+      border-radius: 3px; font-size: 0.9rem;
+      color: var(--text); font-weight: 600;
+    }
+
     #modal-choices { display: none; flex-direction: column; gap: 7px; margin-bottom: 12px; }
     .choice-btn {
       background: transparent; border: 1px solid var(--border);
@@ -2614,12 +2623,14 @@ function openModal({ tag, title, body, questionKey, placeholder, submitLabel, on
   document.getElementById('modal-tag').textContent   = tag   || t('modal.default_tag');
   document.getElementById('modal-title').textContent = title || '';
 
-  // Append translated question block for non-English players
+  // Task prompt callout. Part of the canonical task structure, so it renders in
+  // EVERY locale — English included. Gating it to non-English made the English
+  // build show one block fewer than every other language for the same task.
   let finalBody = body || '';
-  if (questionKey && S.lang !== 'en') {
+  if (questionKey) {
     const tq = t(questionKey);
     if (tq && tq !== questionKey) {
-      finalBody += `<div style="margin-top:14px;padding:10px 14px;background:rgba(0,153,230,0.1);border-inline-start:3px solid var(--accent);border-radius:3px;font-size:0.9rem;color:var(--text);font-weight:600;">🌐 ${tq}</div>`;
+      finalBody += `<div class="modal-prompt">🌐 ${tq}</div>`;
     }
   }
   document.getElementById('modal-body').innerHTML    = finalBody;
