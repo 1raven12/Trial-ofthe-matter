@@ -388,7 +388,7 @@ const TRANSLATIONS = {
     /* Logs for collaborative actions */
     'log.code_found':      '🔑 You found the code for "{label}" — waiting for {n} more teammate(s).',
     'log.code_found_other':'🔑 {name} found the answer to "{label}" — enter the code to confirm!',
-    'log.hint_used_other': '💡 {name} used the hint for {room}. −{time}s / −{pts} pts applied to your team.',
+    'log.hint_used_other': '💡 {name} used the hint for {room}. −{pts} pts applied to your team.',
     'log.teammate_done':   '✓ {name} completed: {label}',
     'log.item_found_other': '🤝 {name} found: {item}',
 
@@ -460,7 +460,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 View Leaderboard',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ Hint penalty applied: −{time}s and −{pts} pts.',
+    'hint.penalty_log': '⚠️ Hint penalty applied: −{pts} pts.',
 
     /* Room path tooltips */
     'nav.here':     ' — YOU ARE HERE',
@@ -1003,7 +1003,7 @@ const TRANSLATIONS = {
     /* Kollaborative Logs */
     'log.code_found':       '🔑 Sie haben den Code für „{label}" gefunden — {n} weitere(s) Teammitglied(er) ausstehend.',
     'log.code_found_other': '🔑 {name} hat die Antwort für „{label}" gefunden — Code eingeben, um zu bestätigen!',
-    'log.hint_used_other':  '💡 {name} hat den Hinweis für {room} verwendet. −{time}s / −{pts} Pkt. werden Ihrem Team abgezogen.',
+    'log.hint_used_other':  '💡 {name} hat den Hinweis für {room} verwendet. −{pts} Pkt. werden Ihrem Team abgezogen.',
     'log.teammate_done':    '✓ {name} abgeschlossen: {label}',
     'log.item_found_other': '🤝 {name} hat gefunden: {item}',
 
@@ -1070,7 +1070,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 Rangliste anzeigen',
 
     /* Hinweis-Strafe-Log */
-    'hint.penalty_log': '⚠️ Hinweis-Strafe angewendet: −{time}s und −{pts} Pkt.',
+    'hint.penalty_log': '⚠️ Hinweis-Strafe angewendet: −{pts} Pkt.',
 
     /* Navigations-Tooltips */
     'nav.here':     ' — SIE SIND HIER',
@@ -1613,7 +1613,7 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':        'Incorrecto. El problema no fue la frecuencia de auditorías ni el archivo de registros. ¿Qué proceso debería haber evitado el uso de un material no aprobado?',
 
     /* Hint */
-    'hint.penalty_log':    '⚠️ Penalización por pista aplicada: −{time}s y −{pts} pts.',
+    'hint.penalty_log':    '⚠️ Penalización por pista aplicada: −{pts} pts.',
 
     /* Chat */
     'chat.placeholder':    'Escribe un mensaje a tu equipo…',
@@ -1622,7 +1622,7 @@ const TRANSLATIONS = {
     /* Activity log */
     'log.code_found':       '🔑 Encontraste el código de «{label}» — esperando a {n} compañero(s) más.',
     'log.code_found_other': '🔑 {name} encontró la respuesta de «{label}» — ¡ingresa el código para confirmar!',
-    'log.hint_used_other':  '💡 {name} usó la pista de {room}. −{time}s / −{pts} pts aplicados a tu equipo.',
+    'log.hint_used_other':  '💡 {name} usó la pista de {room}. −{pts} pts aplicados a tu equipo.',
     'log.teammate_done':    '✓ {name} completó: {label}',
     'log.item_found_other': '🤝 {name} encontró: {item}',
 
@@ -2224,7 +2224,7 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':        'Incorreto. O problema não foi a frequência de auditorias ou o arquivamento de registros. Qual processo deveria ter impedido o uso de material não aprovado desde o início?',
 
     /* Dica */
-    'hint.penalty_log': '⚠️ Penalidade por dica aplicada: −{time}s e −{pts} pts.',
+    'hint.penalty_log': '⚠️ Penalidade por dica aplicada: −{pts} pts.',
 
     /* Chat */
     'chat.placeholder':  'Mande uma mensagem para a equipe…',
@@ -2233,7 +2233,7 @@ const TRANSLATIONS = {
     /* Registro de atividades */
     'log.code_found':       '🔑 Você encontrou o código de "{label}" — aguardando mais {n} colega(s).',
     'log.code_found_other': '🔑 {name} encontrou a resposta de "{label}" — digite o código para confirmar!',
-    'log.hint_used_other':  '💡 {name} usou a dica de {room}. −{time}s / −{pts} pts aplicados à sua equipe.',
+    'log.hint_used_other':  '💡 {name} usou a dica de {room}. −{pts} pts aplicados à sua equipe.',
     'log.teammate_done':    '✓ {name} concluiu: {label}',
     'log.item_found_other': '🤝 {name} encontrou: {item}',
 
@@ -2829,7 +2829,7 @@ const TRANSLATIONS = {
     /* Logs collaboratifs */
     'log.code_found':       '🔑 Vous avez trouvé le code pour « {label} » — {n} coéquipier(s) en attente.',
     'log.code_found_other': '🔑 {name} a trouvé la réponse pour « {label} » — saisissez le code pour confirmer !',
-    'log.hint_used_other':  '💡 {name} a utilisé l\'indice pour {room}. −{time}s / −{pts} pts appliqués à votre équipe.',
+    'log.hint_used_other':  '💡 {name} a utilisé l\'indice pour {room}. −{pts} pts appliqués à votre équipe.',
     'log.teammate_done':    '✓ {name} a terminé : {label}',
     'log.item_found_other': '🤝 {name} a trouvé : {item}',
 
@@ -2896,7 +2896,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 Voir le classement',
 
     /* Pénalité indice */
-    'hint.penalty_log': '⚠️ Pénalité d\'indice appliquée : −{time}s et −{pts} pts.',
+    'hint.penalty_log': '⚠️ Pénalité d\'indice appliquée : −{pts} pts.',
 
     /* Infobulles de navigation */
     'nav.here':     ' — VOUS ÊTES ICI',
@@ -3438,7 +3438,7 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':        '오답입니다. 문제는 감사 빈도나 로그 파일링이 아니었습니다. 처음부터 승인되지 않은 재료 사용을 방지했어야 하는 프로세스는 무엇인가요?',
 
     /* 힌트 */
-    'hint.penalty_log': '⚠️ 힌트 패널티 적용: −{time}초 및 −{pts}점.',
+    'hint.penalty_log': '⚠️ 힌트 패널티 적용: −{pts}점.',
 
     /* 채팅 */
     'chat.placeholder':  '팀에게 메시지 보내기…',
@@ -3447,7 +3447,7 @@ const TRANSLATIONS = {
     /* 활동 로그 */
     'log.code_found':       '🔑 "{label}"의 코드를 찾았습니다 — {n}명의 팀원을 더 기다리고 있습니다.',
     'log.code_found_other': '🔑 {name}이(가) "{label}"의 정답을 찾았습니다 — 코드를 입력하여 확인하세요!',
-    'log.hint_used_other':  '💡 {name}이(가) {room}의 힌트를 사용했습니다. 팀에 −{time}초 / −{pts}점이 적용되었습니다.',
+    'log.hint_used_other':  '💡 {name}이(가) {room}의 힌트를 사용했습니다. 팀에 −{pts}점이 적용되었습니다.',
     'log.teammate_done':    '✓ {name} 완료: {label}',
     'log.item_found_other': '🤝 {name}이(가) 발견: {item}',
 
@@ -4002,7 +4002,7 @@ const TRANSLATIONS = {
     'fb.pin_ok':  'Korrekt! Batch BN-2024-3200 er nu formelt disponeret og frigives til karantæne. FDA-audit bestået!',
     'header.motto':  '"Fremskridt i hvert trin · Kvalitet i enhver detalje"',
     'header.title':  'MediSeal Kvalitetsuge — Escape Room',
-    'hint.penalty_log':  '💡 Tip brugt til {room}. −{time}s / −{pts} point trukket fra din teams score.',
+    'hint.penalty_log':  '💡 Tip brugt til {room}. −{pts} point trukket fra din teams score.',
     'item.aql_table.desc':  'ISO 2859-1 prøveudtagningsdiagram til AQL-inspektion.',
     'item.aql_table.name':  'AQL-prøveudtagningsdiagram',
     'item.batch_cert.desc':  'Batchfrigivelsescertifikat for BN-2024-3200 med QA-autorisations-PIN.',
@@ -4044,7 +4044,7 @@ const TRANSLATIONS = {
     'lobby.waiting_ready':  'Venter på at alle klikker Klar…',
     'log.code_found':  '🔑 Du fandt koden til "{label}" — venter på {n} teammedlem(mer).',
     'log.code_found_other':  '🔑 {name} fandt koden til "{label}" — venter på {n} teammedlem(mer).',
-    'log.hint_used_other':  '💡 {name} brugte tipset til {room}. −{time}s / −{pts} point trukket fra jeres team.',
+    'log.hint_used_other':  '💡 {name} brugte tipset til {room}. −{pts} point trukket fra jeres team.',
     'log.item_found_other':  '🤝 {name} fandt: {item}',
     'log.teammate_done':  '✓ {name} gennemførte: {label}',
     'login.admin_pw_wrong':  'Forkert administratoradgangskode.',
@@ -4617,7 +4617,7 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':        '不正确。问题不在于审计频率或日志归档。从一开始，哪个流程本应阻止使用未经批准的物料？',
 
     /* 提示 */
-    'hint.penalty_log': '⚠️ 已扣除提示罚分：−{time}秒及 −{pts} 分。',
+    'hint.penalty_log': '⚠️ 已扣除提示罚分：−{pts} 分。',
 
     /* 聊天 */
     'chat.placeholder':  '向团队发送消息……',
@@ -4626,7 +4626,7 @@ const TRANSLATIONS = {
     /* 活动日志 */
     'log.code_found':       '🔑 您找到了"{label}"的代码——还需等待 {n} 名队友。',
     'log.code_found_other': '🔑 {name} 找到了"{label}"的答案——请输入代码确认！',
-    'log.hint_used_other':  '💡 {name} 使用了 {room} 的提示。已扣除团队 −{time}秒 / −{pts} 分。',
+    'log.hint_used_other':  '💡 {name} 使用了 {room} 的提示。已扣除团队 −{pts} 分。',
     'log.teammate_done':    '✓ {name} 已完成：{label}',
     'log.item_found_other': '🤝 {name} 发现了：{item}',
 
@@ -5229,7 +5229,7 @@ const TRANSLATIONS = {
     'fb.iso9001_1_bad':        '不正確。問題不在於稽核頻率或日誌歸檔。從一開始，哪個流程本應阻止使用未經核准的物料？',
 
     /* 提示 */
-    'hint.penalty_log': '⚠️ 已扣除提示罰分：−{time}秒及 −{pts} 分。',
+    'hint.penalty_log': '⚠️ 已扣除提示罰分：−{pts} 分。',
 
     /* 聊天 */
     'chat.placeholder':  '傳送訊息給團隊……',
@@ -5238,7 +5238,7 @@ const TRANSLATIONS = {
     /* 活動紀錄 */
     'log.code_found':       '🔑 您找到了「{label}」的代碼——還需等待 {n} 名隊友。',
     'log.code_found_other': '🔑 {name} 找到了「{label}」的答案——請輸入代碼確認！',
-    'log.hint_used_other':  '💡 {name} 使用了 {room} 的提示。已扣除團隊 −{time}秒 / −{pts} 分。',
+    'log.hint_used_other':  '💡 {name} 使用了 {room} 的提示。已扣除團隊 −{pts} 分。',
     'log.teammate_done':    '✓ {name} 已完成：{label}',
     'log.item_found_other': '🤝 {name} 發現了：{item}',
 
@@ -5835,7 +5835,7 @@ const TRANSLATIONS = {
     'fb.iso9001_2_bad':        'Tidak betul. Fikirkan apa yang perlu dinilai dalam semakan SMK — ia harus merangkumi kejadian kualiti, tindakan pembetulan dan prestasi sistem.',
 
     /* Log penalti petunjuk */
-    'hint.penalty_log': '⚠️ Penalti petunjuk ditolak: −{time} saat dan −{pts} mata.',
+    'hint.penalty_log': '⚠️ Penalti petunjuk ditolak: −{pts} mata.',
 
     /* Item inventori */
     'item.selected_prefix':     'Dipilih: ',
@@ -5884,7 +5884,7 @@ const TRANSLATIONS = {
     /* Log aktiviti */
     'log.code_found':       '🔑 Anda menemui kod untuk "{label}" — menunggu {n} rakan sepasukan lagi.',
     'log.code_found_other': '🔑 {name} menemui jawapan untuk "{label}" — taip kod untuk mengesahkan!',
-    'log.hint_used_other':  '💡 {name} menggunakan petunjuk untuk {room}. Pasukan ditolak −{time}s / −{pts} mata.',
+    'log.hint_used_other':  '💡 {name} menggunakan petunjuk untuk {room}. Pasukan ditolak −{pts} mata.',
     'log.teammate_done':    '✓ {name} telah selesai: {label}',
     'log.item_found_other': '🤝 {name} menemui: {item}',
 
@@ -6441,7 +6441,7 @@ const TRANSLATIONS = {
     'chat.placeholder':    'ತಂಡಕ್ಕೆ ಸಂದೇಶ ಕಳಿಸಿ…',
     'log.code_found':      '🔑 ನೀವು "{label}" ಗಾಗಿ ಕೋಡ್ ಕಂಡಿರಿ — {n} ತಂಡ ಸಾಥಿಗಳ ನಿರೀಕ್ಷೆ.',
     'log.code_found_other':'🔑 {name} "{label}" ಉತ್ತರ ಕಂಡರು — ಖಚಿತಪಡಿಸಲು ಕೋಡ್ ಹಾಕಿ!',
-    'log.hint_used_other': '💡 {name} {room} ಗಾಗಿ ಸಲಹೆ ಬಳಸಿದರು. ತಂಡಕ್ಕೆ −{time}ಸೆ / −{pts} ಅಂಕ ಕಡಿತ.',
+    'log.hint_used_other': '💡 {name} {room} ಗಾಗಿ ಸಲಹೆ ಬಳಸಿದರು. ತಂಡಕ್ಕೆ −{pts} ಅಂಕ ಕಡಿತ.',
     'log.teammate_done':   '✓ {name} ಪೂರ್ಣಗೊಳಿಸಿದ: {label}',
     'log.item_found_other': '🤝 {name} ಕಂಡರು: {item}',
     'puzzle.label.coa_verified':    'GMP ವಸ್ತು ಪರಿಶೀಲನೆ',
@@ -6496,7 +6496,7 @@ const TRANSLATIONS = {
     'already.body':     'ನಿಮ್ಮ ತಂಡ ಈಗಾಗಲೇ ಗುಣಮಟ್ಟ ಸಪ್ತಾಹ ಎಸ್ಕೇಪ್ ರೂಮ್ ಆಡಿ ಮುಗಿಸಿದೆ.<br>ಪ್ರತಿ ತಂಡ ಒಮ್ಮೆ ಮಾತ್ರ ಆಡಬಹುದು. ನಿಮ್ಮ ಅಂಕ ನೋಡಲು ಲೀಡರ್‌ಬೋರ್ಡ್ ಪರಿಶೀಲಿಸಿ!',
     'already.lb_btn':   '📊 ಲೀಡರ್‌ಬೋರ್ಡ್ ನೋಡಿ',
     'end.lb_btn':       '📊 ಲೀಡರ್‌ಬೋರ್ಡ್ ನೋಡಿ',
-    'hint.penalty_log': '⚠️ ಸಲಹೆ ದಂಡ ಅನ್ವಯ: −{time}ಸೆ ಮತ್ತು −{pts} ಅಂಕ.',
+    'hint.penalty_log': '⚠️ ಸಲಹೆ ದಂಡ ಅನ್ವಯ: −{pts} ಅಂಕ.',
     'nav.here':     ' — ನೀವಿಲ್ಲಿದ್ದೀರಿ',
     'nav.visited':  ' — ಭೇಟಿ ಮಾಡಿದ',
     'nav.unlocked': ' — ತೆರೆದಿದೆ',
@@ -7015,7 +7015,7 @@ const TRANSLATIONS = {
     'chat.placeholder':    'உங்கள் குழுவிற்கு செய்தி அனுப்பு…',
     'log.code_found':      '🔑 "{label}" க்கான குறியீட்டை கண்டுபிடித்தீர்கள் — {n} அணி உறுப்பினர்(கள்) காத்திருக்கின்றனர்.',
     'log.code_found_other':'🔑 {name} "{label}" க்கான பதிலை கண்டுபிடித்தார் — உறுதிப்படுத்த குறியீட்டை உள்ளிடவும்!',
-    'log.hint_used_other': '💡 {name} {room} க்கான குறிப்பை பயன்படுத்தினார். −{time} வினாடி / −{pts} pts உங்கள் குழுவிற்கு பயன்படுத்தப்பட்டது.',
+    'log.hint_used_other': '💡 {name} {room} க்கான குறிப்பை பயன்படுத்தினார். −{pts} pts உங்கள் குழுவிற்கு பயன்படுத்தப்பட்டது.',
     'log.teammate_done':   '✓ {name} முடித்தார்: {label}',
     'log.item_found_other': '🤝 {name} கண்டுபிடித்தார்: {item}',
     'puzzle.label.coa_verified':    'GMP பொருள் சரிபார்ப்பு',
@@ -7070,7 +7070,7 @@ const TRANSLATIONS = {
     'already.body':     'உங்கள் குழு ஏற்கனவே தர வார எஸ்கேப் ரூமை முடித்துள்ளது.<br>ஒவ்வொரு குழுவும் ஒரு முறை மட்டுமே விளையாடலாம். உங்கள் மதிப்பெண் பார்க்க தரவரிசையை சரிபார்க்கவும்!',
     'already.lb_btn':   '📊 தரவரிசை பார்',
     'end.lb_btn':       '📊 தரவரிசை பார்',
-    'hint.penalty_log': '⚠️ குறிப்பு அபராதம் பயன்படுத்தப்பட்டது: −{time} வினாடி மற்றும் −{pts} pts.',
+    'hint.penalty_log': '⚠️ குறிப்பு அபராதம் பயன்படுத்தப்பட்டது: −{pts} pts.',
     'nav.here':     ' — நீங்கள் இங்கே உள்ளீர்கள்',
     'nav.visited':  ' — பார்வையிட்டது',
     'nav.unlocked': ' — திறக்கப்பட்டது',
@@ -7443,7 +7443,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 लीडरबोर्ड देखें',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ संकेत दंड लागू: −{time} सेकंड और −{pts} अंक।',
+    'hint.penalty_log': '⚠️ संकेत दंड लागू: −{pts} अंक।',
 
     /* Room path tooltips */
     'nav.here':     ' — आप यहाँ हैं',
@@ -7826,7 +7826,7 @@ const TRANSLATIONS = {
     'hq.hq_dispatch_2.d':                            'नमूनाकरण गुणवत्ता ऑडिट पूरा करने के लिए आवश्यक समय को कम करता है।',
     'lobby.connected':  '{count}/{total} कनेक्टेड',
     'lobby.ready_status':  '✓ तैयार: {count} / {total}  ({names})',
-    'log.hint_used_other':  '💡 {name} ने {room} के लिए संकेत का उपयोग किया। −{time}s / −{pts} अंक आपकी टीम से काटे गए।',
+    'log.hint_used_other':  '💡 {name} ने {room} के लिए संकेत का उपयोग किया। −{pts} अंक आपकी टीम से काटे गए।',
     'log.item_found_other':  '🤝 {name} को मिला: {item}',
     'log.teammate_done':  '✓ {name} ने पूरा किया: {label}',
     'members.online':  '{n} ऑनलाइन',
@@ -8298,7 +8298,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 Pogledaj rang listu',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ Primenjena kazna za nagoveštaj: −{time}s i −{pts} bod.',
+    'hint.penalty_log': '⚠️ Primenjena kazna za nagoveštaj: −{pts} bod.',
 
     /* Room path tooltips */
     'nav.here':     ' — OVDE STE',
@@ -8449,7 +8449,7 @@ const TRANSLATIONS = {
     'rules.english_answers':    'Neki odgovori moraju biti ukucani na engleskom tačno onako kako je prikazano (npr. broj serije, ACCEPT/REJECT). Polja s razlikom velikih/malih slova su naznačena u pitanju.',
     'lobby.connected':  '{count}/{total} spojeno',
     'lobby.ready_status':  '✓ Spreman/a: {count} / {total}  ({names})',
-    'log.hint_used_other':  '💡 {name} je koristio/la trag za {room}. −{time}s / −{pts} bod. primenjeno na vaš tim.',
+    'log.hint_used_other':  '💡 {name} je koristio/la trag za {room}. −{pts} bod. primenjeno na vaš tim.',
     'log.item_found_other':  '🤝 {name} je pronašao/la: {item}',
     'log.teammate_done':  '✓ {name} završio/la: {label}',
     'members.online':  '{n} na mreži',
@@ -8860,7 +8860,7 @@ const TRANSLATIONS = {
     'already.body': 'Ваша група је већ завршила собу бекства Недеље квалитета.<br>Свака група може играти само једном. Проверите ранг листу да видите резултат!',
     'already.lb_btn': '📊 Погледај ранг листу',
     'end.lb_btn': '📊 Погледај ранг листу',
-    'hint.penalty_log': '⚠️ Примењена казна за наговештај: −{time}с и −{pts} бод.',
+    'hint.penalty_log': '⚠️ Примењена казна за наговештај: −{pts} бод.',
     'nav.here': ' — ОВДЕ СТЕ',
     'nav.visited': ' — посећено',
     'nav.unlocked': ' — откључано',
@@ -8999,7 +8999,7 @@ const TRANSLATIONS = {
     'rules.english_answers':    'Неки одговори морају бити укуцани на енглеском тачно онако како је приказано (нпр. број серије, ACCEPT/REJECT). Поља с разликом великих/малих слова су назначена у питању.',
     'lobby.connected':  '{count}/{total} повезано',
     'lobby.ready_status':  '✓ Спреман/а: {count} / {total}  ({names})',
-    'log.hint_used_other':  '💡 {name} је користио/ла траг за {room}. −{time}s / −{pts} бод. примењено на ваш тим.',
+    'log.hint_used_other':  '💡 {name} је користио/ла траг за {room}. −{pts} бод. примењено на ваш тим.',
     'log.item_found_other':  '🤝 {name} је пронашао/ла: {item}',
     'log.teammate_done':  '✓ {name} завршио/ла: {label}',
     'members.online':  '{n} на мрежи',
@@ -9412,7 +9412,7 @@ const TRANSLATIONS = {
     /* Logs for collaborative actions */
     'log.code_found':       '🔑 מצאת את הקוד עבור "{label}" — ממתין ל-{n} חברי צוות נוספים.',
     'log.code_found_other': '🔑 {name} מצא/ה את התשובה עבור "{label}" — הזן את הקוד לאישור!',
-    'log.hint_used_other':  '💡 {name} השתמש/ה ברמז עבור {room}. {time}− שנ׳ / {pts}− נק׳ הופחתו מהצוות.',
+    'log.hint_used_other':  '💡 {name} השתמש/ה ברמז עבור {room}. {pts}− נק׳ הופחתו מהצוות.',
     'log.teammate_done':    '✓ {name} השלים/ה: {label}',
     'log.item_found_other': '🤝 {name} מצא/ה: {item}',
 
@@ -9482,7 +9482,7 @@ const TRANSLATIONS = {
     'already.lb_btn': '📊 צפה בלוח תוצאות',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ קנס רמז הוחל: {time}− שנ׳ ו-{pts}− נק׳.',
+    'hint.penalty_log': '⚠️ קנס רמז הוחל: {pts}− נק׳.',
 
     /* Room path tooltips */
     'nav.here':     ' — אתה כאן',
@@ -10040,7 +10040,7 @@ const TRANSLATIONS = {
     /* Logs for collaborative actions */
     'log.code_found':      '🔑 మీరు "{label}" కు కోడ్ కనుగొన్నారు — {n} మరో జట్టు సభ్యుల కోసం వేచి ఉన్నారు.',
     'log.code_found_other':'🔑 {name} "{label}" సమాధానం కనుగొన్నారు — కోడ్ నమోదు చేసి ధృవీకరించండి!',
-    'log.hint_used_other': '💡 {name} {room} కు సూచన వాడారు. −{time}సె / −{pts} పాయింట్లు మీ జట్టుకు వర్తింపజేశారు.',
+    'log.hint_used_other': '💡 {name} {room} కు సూచన వాడారు. −{pts} పాయింట్లు మీ జట్టుకు వర్తింపజేశారు.',
     'log.teammate_done':   '✓ {name} పూర్తి చేసారు: {label}',
     'log.item_found_other': '🤝 {name} కనుగొన్నారు: {item}',
 
@@ -10112,7 +10112,7 @@ const TRANSLATIONS = {
     'end.lb_btn':       '📊 లీడర్‌బోర్డ్ చూడండి',
 
     /* Hint penalty log */
-    'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{time}సె మరియు −{pts} పాయింట్లు.',
+    'hint.penalty_log': '⚠️ సూచన శిక్ష వర్తించింది: −{pts} పాయింట్లు.',
 
     /* Room path tooltips */
     'nav.here':     ' — మీరు ఇక్కడ ఉన్నారు',
