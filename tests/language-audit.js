@@ -128,6 +128,19 @@ async function playTrial({ wrong = 0, hints = [] } = {}) {
     ko('A1 localization audit failed', (e.stdout || '').split('\n').filter(l => l.includes('✗')).slice(0, 8).join(' | '));
   }
 
+  // ── A2. layout / scroll reachability for this locale ──────────────────────
+  sec(`A2. layout & scroll reachability — ${lang}`);
+  try {
+    const out = execFileSync('node', [path.join(ROOT, 'tests', 'layout-audit.js'), `--lang=${lang}`],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+    const m = out.match(/LAYOUT AUDIT: (\d+)\/(\d+) passed, (\d+) failed/);
+    if (m && m[3] === '0') ok(`A2 layout audit clean (${m[1]}/${m[2]} across 8 viewports)`);
+    else { ko('A2 layout audit', m ? `${m[3]} failed` : 'no result line');
+           out.split('\n').filter(l => l.includes('✗')).slice(0, 8).forEach(l => process.stdout.write('      ' + l.trim() + '\n')); }
+  } catch (e) {
+    ko('A2 layout audit failed', ((e.stdout || '') + (e.message || '')).split('\n').filter(l => l.includes('✗')).slice(0, 6).join(' | '));
+  }
+
   const tok = await admin();
 
   // ── B. all 256 groups exist and are addressable ───────────────────────────

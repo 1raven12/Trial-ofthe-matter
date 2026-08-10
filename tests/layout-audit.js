@@ -47,9 +47,27 @@ const VIEWPORTS = [
 
 let pass = 0, fail = 0;
 const failures = [];
-const ok  = l => { pass++; process.stdout.write('  ✓ ' + l + '\n'); };
-const ko  = (l, d = '') => { fail++; failures.push({ l, d }); process.stdout.write('  ✗ ' + l + (d ? '\n      → ' + d : '') + '\n'); };
 const sec = n => process.stdout.write('\n── ' + n + ' ──\n');
+
+/**
+ * Viewports are audited concurrently, so each one collects into its own buffer
+ * and the buffers are flushed in declaration order. Without this the log would
+ * interleave and stop being readable as "locale × viewport".
+ */
+function makeSink() {
+  const lines = [];
+  return {
+    lines,
+    ok:  l => lines.push({ ok: true,  l }),
+    ko:  (l, d = '') => lines.push({ ok: false, l, d }),
+    flush() {
+      for (const e of lines) {
+        if (e.ok) { pass++; process.stdout.write('  ✓ ' + e.l + '\n'); }
+        else { fail++; failures.push({ l: e.l, d: e.d }); process.stdout.write('  ✗ ' + e.l + (e.d ? '\n      → ' + e.d : '') + '\n'); }
+      }
+    },
+  };
+}
 
 /**
  * Is `el` reachable? An element is reachable when, after scrolling its nearest
@@ -123,47 +141,61 @@ async function newPage(browser, lang, vp) {
   return { ctx, page };
 }
 
-async function loadHome(page) {
-  await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForFunction(
-    () => document.getElementById('group-select')?.options.length > 1, { timeout: 20000 });
+/**
+ * Load the login page and wait for the group dropdown to be populated.
+ * Retries: the dropdown is filled from /api/groups, and across 136 page loads
+ * in one run that fetch occasionally outlasts a single window. A slow load is a
+ * property of the harness, not of the layout under test.
+ */
+async function loadHome(page, tries = 3) {
+  let lastErr;
+  for (let i = 1; i <= tries; i++) {
+    try {
+      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForFunction(
+        () => document.getElementById('group-select')?.options.length > 1, { timeout: 20000 });
+      return;
+    } catch (e) { lastErr = e; await page.waitForTimeout(600 * i); }
+  }
+  throw lastErr;
 }
 
 /** Assert an element is reachable; returns true on success. */
-async function assertReachable(page, selector, label) {
+async function assertReachable(sink, page, selector, label) {
   const r = await page.evaluate(REACHABLE, selector);
-  if (!r.found)          { ko(`${label}: not in DOM`); return false; }
-  if (!r.visible)        { ok(`${label}: not shown in this state (skipped)`); return true; }
-  if (r.covered)         { ko(`${label}: covered by an overlay`, `topmost element = ${r.coveredBy}`); return false; }
-  if (!r.inView)         { ko(`${label}: cannot be scrolled into view`, `rect top=${r.rect.top} bottom=${r.rect.bottom} viewport=${r.vh}`); return false; }
-  ok(`${label}: reachable`);
+  if (!r.found)          { sink.ko(`${label}: not in DOM`); return false; }
+  if (!r.visible)        { sink.ok(`${label}: not shown in this state (skipped)`); return true; }
+  if (r.covered)         { sink.ko(`${label}: covered by an overlay`, `topmost element = ${r.coveredBy}`); return false; }
+  if (!r.inView)         { sink.ko(`${label}: cannot be scrolled into view`, `rect top=${r.rect.top} bottom=${r.rect.bottom} viewport=${r.vh}`); return false; }
+  sink.ok(`${label}: reachable`);
   return true;
 }
 
-async function assertNoTrappedScroll(page, label) {
+async function assertNoTrappedScroll(sink, page, label) {
   const s = await page.evaluate(SCROLL_STATE);
   if (s.stuck.length) {
-    ko(`${label}: content trapped out of reach`, JSON.stringify(s.stuck.slice(0, 3)));
+    sink.ko(`${label}: content trapped out of reach`, JSON.stringify(s.stuck.slice(0, 3)));
     return false;
   }
   if (!s.docScrollable) {
-    ko(`${label}: document overflows but cannot scroll`, `html=${s.htmlOverflow} body=${s.bodyOverflow}`);
+    sink.ko(`${label}: document overflows but cannot scroll`, `html=${s.htmlOverflow} body=${s.bodyOverflow}`);
     return false;
   }
-  ok(`${label}: no trapped scroll containers`);
+  sink.ok(`${label}: no trapped scroll containers`);
   return true;
 }
 
 // ── one locale × one viewport ────────────────────────────────────────────────
 async function auditLocaleViewport(browser, lang, vp) {
+  const sink = makeSink();
   const { ctx, page } = await newPage(browser, lang, vp);
   const tag = `[${lang} · ${vp.name}]`;
   try {
     await loadHome(page);
 
     // 1. login screen — the card and the primary button must be reachable
-    await assertNoTrappedScroll(page, `${tag} login`);
-    await assertReachable(page, '#login-btn', `${tag} login button`);
+    await assertNoTrappedScroll(sink, page, `${tag} login`);
+    await assertReachable(sink, page, '#login-btn', `${tag} login button`);
 
     // 2. start screen via demo mode — this is where the report said Start
     //    could not be reached
@@ -174,8 +206,8 @@ async function auditLocaleViewport(browser, lang, vp) {
     await page.waitForSelector('#startscreen', { state: 'visible', timeout: 10000 });
     await page.waitForTimeout(250);
 
-    await assertNoTrappedScroll(page, `${tag} start screen`);
-    await assertReachable(page, '#start-btn', `${tag} START button`);
+    await assertNoTrappedScroll(sink, page, `${tag} start screen`);
+    await assertReachable(sink, page, '#start-btn', `${tag} START button`);
 
     // 3. enter the game, then open and close a task modal. A modal that leaves
     //    scroll locked behind it is the classic intermittent cause.
@@ -187,10 +219,10 @@ async function auditLocaleViewport(browser, lang, vp) {
                   questionKey: 'q.iso15378_2', noInput: true });
     });
     await page.waitForTimeout(200);
-    await assertReachable(page, '#modal-cancel', `${tag} modal close button`);
+    await assertReachable(sink, page, '#modal-cancel', `${tag} modal close button`);
     await page.evaluate(() => closeModal());
     await page.waitForTimeout(200);
-    await assertNoTrappedScroll(page, `${tag} after modal close`);
+    await assertNoTrappedScroll(sink, page, `${tag} after modal close`);
 
     // 4. repeat open/close — a cleanup that only fails on the Nth cycle is
     //    exactly what makes this bug look intermittent
@@ -200,18 +232,19 @@ async function auditLocaleViewport(browser, lang, vp) {
       await page.evaluate(() => closeModal());
       await page.waitForTimeout(60);
     }
-    await assertNoTrappedScroll(page, `${tag} after 5 modal cycles`);
+    await assertNoTrappedScroll(sink, page, `${tag} after 5 modal cycles`);
 
     // 5. resize while open — layout must recover, not latch
     await page.setViewportSize({ width: Math.max(360, vp.width - 200), height: Math.max(400, vp.height - 160) });
     await page.waitForTimeout(200);
-    await assertNoTrappedScroll(page, `${tag} after resize`);
+    await assertNoTrappedScroll(sink, page, `${tag} after resize`);
 
   } catch (e) {
-    ko(`${tag} threw`, (e && e.message ? e.message : String(e)).split('\n')[0]);
+    sink.ko(`${tag} threw`, (e && e.message ? e.message : String(e)).split('\n')[0]);
   } finally {
     await ctx.close();
   }
+  return sink;
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
@@ -231,9 +264,17 @@ async function auditLocaleViewport(browser, lang, vp) {
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
   });
   try {
+    // Viewports are independent: nothing here mutates server state (the game is
+    // driven in demo mode), so they run concurrently with a small cap and their
+    // buffered output is flushed in declaration order.
+    const CONCURRENCY = 4;
     for (const lang of langs) {
       sec(`locale ${lang}`);
-      for (const vp of vps) await auditLocaleViewport(browser, lang, vp);
+      for (let i = 0; i < vps.length; i += CONCURRENCY) {
+        const batch = vps.slice(i, i + CONCURRENCY);
+        const sinks = await Promise.all(batch.map(vp => auditLocaleViewport(browser, lang, vp)));
+        sinks.forEach(s => s.flush());
+      }
     }
   } finally {
     await browser.close();

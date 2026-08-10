@@ -24,6 +24,8 @@ const SUITES = [
     args: ['tests/scoring-tests.js'] },
   { name: 'end-to-end game flow (103 checks)',
     args: ['tests/full-audit.js'] },
+  { name: 'layout & scroll reachability — 17 locales × 8 viewports',
+    args: ['tests/layout-audit.js'] },
 ];
 
 /** Static checks that need no runtime: syntax + structural invariants. */
