@@ -26,6 +26,8 @@ const SUITES = [
     args: ['tests/full-audit.js'] },
   { name: 'layout & scroll reachability — 17 locales × 8 viewports',
     args: ['tests/layout-audit.js'] },
+  { name: 'real-player entry journey — 17 locales, three live teammates',
+    args: ['tests/journey-audit.js'] },
 ];
 
 /** Static checks that need no runtime: syntax + structural invariants. */
