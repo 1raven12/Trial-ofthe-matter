@@ -236,7 +236,14 @@ async function gotoRoom(page, roomId) {
 
 /** Click every hotspot in the current room, answering whatever opens. */
 async function workRoom(page, lang, budget) {
-  if (!await waitPlayable(page)) return;      // still paused — nothing can be clicked
+  if (!await waitPlayable(page)) {
+    if (process.env.JOURNEY_DEBUG) {
+      const st = await page.evaluate(() => ({ room: S.room, paused: S.paused, over: S.over,
+        online: (S.membersOnline || []).length })).catch(() => null);
+      process.stderr.write(`      [bail] workRoom gave up waiting: ${JSON.stringify(st)}\n`);
+    }
+    return;
+  }
   const n = await page.evaluate(() => document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)').length);
   for (let i = 0; i < n; i++) {
     if (!await waitPlayable(page, 20000)) return;
@@ -474,11 +481,12 @@ async function journey(browser, lang, groupId, pin) {
       if (process.env.JOURNEY_DEBUG) {
         const st = await Promise.all(pages.map(pg => pg.evaluate(() => ({
           room: S.room, mine: Object.keys(S.mySolved || {}).length,
+          paused: S.paused, online: (S.membersOnline || []).length,
         }))));
         const missing = await pages[0].evaluate(keys => keys.filter(k => !(S.solved || {})[k]), SCORED_PUZZLES);
         const mineMissing = await Promise.all(pages.map(pg => pg.evaluate(keys => keys.filter(k => !(S.mySolved || {})[k]), SCORED_PUZZLES)));
         process.stderr.write(`    step ${step}: group=${n} ` +
-          st.map((x, i) => `p${i + 1}[${x.room} ${x.mine}]`).join(' ') +
+          st.map((x, i) => `p${i + 1}[${x.room} ${x.mine} paused=${x.paused} online=${x.online}]`).join(' ') +
           ` | groupMissing=${missing.join(',')} | mineMissing=${mineMissing.map(a => a.join('/')).join(' ~ ')}\n`);
       }
       stagnant = (n === lastSolved) ? stagnant + 1 : 0;
