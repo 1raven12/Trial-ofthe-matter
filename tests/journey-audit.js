@@ -32,6 +32,12 @@ const IDX   = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 const OT_THRESH = 1800, MAX_SECS = 3600, WRONG_PTS = 50, HINT_PTS = 50;
 const ROOM_ORDER = ['receiving', 'production', 'qclab', 'qaoffice', 'dispatch'];
+/** The eleven scored tasks, in the order the game credits them. */
+const SCORED_PUZZLES = [
+  'coa_verified', 'inspection_done', 'ncr_filed', 'motto_production',
+  'calibration_done', 'iso15378_done', 'capa_done', 'iso9001_done',
+  'motto_qaoffice', 'batch_retrieved', 'motto_challenge',
+];
 const CHOICE_PUZZLES = ['capa_root','capa_prev','iso15378_1','iso15378_2',
                         'iso9001_1','iso9001_2','motto_prod','motto_qa','motto_dis'];
 
@@ -408,51 +414,90 @@ async function journey(browser, lang, groupId, pin) {
     const trials0 = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).groups.find(g => g.id === groupId);
     if ((trials0.trials || []).length === (trials0.trials || []).length) sink.ok(`${tag} S7 double-press did not create a second session`);
 
-    // ── STEP 8 — gameplay reachability, then hand off ──────────────────────
-    // Every room control a player needs is verified reachable and enabled here.
-    // Completing all eleven puzzles by clicking is driven by the existing
-    // end-to-end suites against the real server (language-audit E/G, full-audit,
-    // scoring-tests); this journey covers the entry path those suites skip.
-    const hint = await pages[0].evaluate(() => {
+    // ── STEP 8 — complete all eleven puzzles through the UI ────────────────
+    // Rooms unlock only once ALL three players have solved the gate puzzle
+    // (canEnter checks S.solved, the group-level record), so the team advances
+    // together and the loop keeps cycling until every task is credited.
+    const hintOk = await pages[0].evaluate(() => {
       const b = document.querySelector('#hotspots .hotspot-btn.hint-btn');
       if (!b || b.disabled) return { ok: false };
       b.scrollIntoView({ block: 'center' });
       const r = b.getBoundingClientRect();
-      return { ok: true, reachable: r.top >= -1 && r.bottom <= innerHeight + 1 };
+      const reachable = r.top >= -1 && r.bottom <= innerHeight + 1;
+      b.click();
+      return { ok: true, reachable };
     });
-    if (hint.ok && hint.reachable) sink.ok(`${tag} S8 hint control present and reachable`);
-    else sink.ko(`${tag} S8 hint control`, JSON.stringify(hint));
+    if (hintOk.ok && hintOk.reachable) sink.ok(`${tag} S8 hint control reachable and used`);
+    else sink.ko(`${tag} S8 hint control`, JSON.stringify(hintOk));
+    await waitModal(pages[0], true, 1200);
+    await closeModalIfOpen(pages[0]);
 
-    // open a task, answer it, and confirm the game accepts it
-    const solvedBefore = await pages[0].evaluate(() => Object.keys(S.mySolved || {}).length);
-    // Not every hotspot opens a task — some just add an item or log a finding.
-    let opened = false;
-    const spots = await pages[0].evaluate(() =>
-      document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)').length);
-    for (let i = 0; i < spots && !opened; i++) {
-      await pages[0].evaluate(i => {
-        const b = document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)')[i];
-        if (b && !b.disabled) b.click();
-      }, i);
-      opened = await waitModal(pages[0], true, 1200);
-    }
-    if (opened) {
-      const shape = await pages[0].evaluate(() => ({
-        title: document.getElementById('modal-title')?.textContent.trim() || '',
-        body: document.getElementById('modal-body')?.innerText.trim().length || 0,
-        close: !!document.getElementById('modal-cancel'),
+    // A room must be finished before it can be left, and the next room opens
+    // only once all three players have solved the gate task. So the team simply
+    // works the room it is standing in and advances when the game allows it —
+    // far fewer clicks than sweeping every room each round.
+    let mistakeMade = false;
+    let lastSolved = -1, stagnant = 0;
+    for (let step = 0; step < 40; step++) {
+      await Promise.all(pages.map(async (pg, i) => {
+        if (await pg.evaluate(() => !!(S.solved && S.solved.game_won))) return;
+        const room = await pg.evaluate(() => S.room);
+        const spend = (i === 0 && !mistakeMade && room === 'production');
+        if (spend) mistakeMade = true;
+        await workRoom(pg, lang, { mistakes: spend ? 1 : 0 });
+        // advance if the game now permits it
+        await pg.evaluate(() => {
+          const b = [...document.querySelectorAll('#room-nav .nav-btn')]
+            .find(x => !x.disabled && x.classList.contains('next-open'));
+          if (b) b.click();
+        });
+        await pg.waitForTimeout(120);
       }));
-      if (shape.title && shape.body > 40 && shape.close)
-        sink.ok(`${tag} S8 task modal opens with localised content (${shape.body} chars)`);
-      else sink.ko(`${tag} S8 task modal thin`, JSON.stringify(shape));
-      await closeModalIfOpen(pages[0]);
-      if (!(await modalOpen(pages[0]))) sink.ok(`${tag} S8 task modal closes cleanly`);
-      else sink.ko(`${tag} S8 task modal would not close`);
-    } else {
-      sink.ko(`${tag} S8 no task modal opened from the first room`);
+
+      const done = await Promise.all(pages.map(pg => pg.evaluate(() => !!(S.solved && S.solved.game_won))));
+      if (done.every(Boolean)) break;
+
+      const n = await pages[0].evaluate(() => Object.keys(S.solved || {}).length);
+      if (process.env.JOURNEY_DEBUG) {
+        const st = await Promise.all(pages.map(pg => pg.evaluate(() => ({
+          room: S.room, mine: Object.keys(S.mySolved || {}).length,
+        }))));
+        const missing = await pages[0].evaluate(keys => keys.filter(k => !(S.solved || {})[k]), SCORED_PUZZLES);
+        const mineMissing = await Promise.all(pages.map(pg => pg.evaluate(keys => keys.filter(k => !(S.mySolved || {})[k]), SCORED_PUZZLES)));
+        process.stderr.write(`    step ${step}: group=${n} ` +
+          st.map((x, i) => `p${i + 1}[${x.room} ${x.mine}]`).join(' ') +
+          ` | groupMissing=${missing.join(',')} | mineMissing=${mineMissing.map(a => a.join('/')).join(' ~ ')}\n`);
+      }
+      stagnant = (n === lastSolved) ? stagnant + 1 : 0;
+      lastSolved = n;
+      // if nothing moved for several passes, step back a room: a prerequisite
+      // may be waiting in an earlier area
+      if (stagnant === 3) {
+        await Promise.all(pages.map(pg => pg.evaluate(() => {
+          const b = [...document.querySelectorAll('#room-nav .nav-btn')]
+            .find(x => !x.disabled && x.classList.contains('prev'));
+          if (b) b.click();
+        })));
+      }
+      if (stagnant >= 8) break;
     }
 
-    // scrolling must still work after opening and closing a modal
+    // Per-puzzle evidence: each of the eleven scored tasks, credited to the
+    // group, having been driven only by clicking in this locale's UI.
+    const solved = await pages[0].evaluate(() => ({ ...(S.solved || {}) }));
+    let uiPuzzles = 0;
+    SCORED_PUZZLES.forEach((key, n) => {
+      if (solved[key]) { uiPuzzles++; sink.ok(`${tag} Puzzle ${n + 1} (${key}) — UI completion`); }
+      else sink.ko(`${tag} Puzzle ${n + 1} (${key}) — not completed through the UI`);
+    });
+    if (uiPuzzles === SCORED_PUZZLES.length && solved.game_won)
+      sink.ok(`${tag} S8 all ${SCORED_PUZZLES.length} puzzles completed by clicking, game won`);
+    else { sink.ko(`${tag} S8 playthrough incomplete`, `${uiPuzzles}/${SCORED_PUZZLES.length} solved, game_won=${!!solved.game_won}`); return sink; }
+
+    if (mistakeMade) sink.ok(`${tag} S8 deliberate wrong answer exercised`);
+    else sink.ko(`${tag} S8 no wrong answer exercised`);
+
+    // scrolling must still be intact after a whole game of modal traffic
     const scroll = await pages[0].evaluate(() => {
       const stuck = [];
       document.querySelectorAll('*').forEach(el => {
@@ -461,10 +506,31 @@ async function journey(browser, lang, groupId, pin) {
         if (over && !/(auto|scroll)/.test(st.overflowY) && (st.position === 'fixed' || st.position === 'absolute'))
           stuck.push(el.id || el.className || el.tagName);
       });
-      return { stuck, body: getComputedStyle(document.body).overflowY };
+      return stuck;
     });
-    if (!scroll.stuck.length) sink.ok(`${tag} S8 no scroll lock left behind after modal use`);
-    else sink.ko(`${tag} S8 scroll trapped after modal`, scroll.stuck.slice(0, 3).join(', '));
+    if (!scroll.length) sink.ok(`${tag} S8 no scroll lock after a full playthrough at 100% zoom`);
+    else sink.ko(`${tag} S8 scroll trapped`, scroll.slice(0, 3).join(', '));
+
+    // ── STEP 9 — result screen, read from the UI ───────────────────────────
+    for (const pg of pages) {
+      try { await pg.waitForFunction(
+        () => getComputedStyle(document.getElementById('endscreen')).display !== 'none', { timeout: 25000 }); }
+      catch { sink.ko(`${tag} S9 end screen never appeared`); return sink; }
+    }
+    const ui = await pages[0].evaluate(() => {
+      const stats = document.getElementById('end-stats')?.innerText || '';
+      const nums = [...stats.matchAll(/-?[\d.,]+/g)].map(m => Number(m[0].replace(/[.,]/g, '')));
+      return {
+        title: document.getElementById('end-title')?.textContent.trim() || '',
+        stats, statsLen: stats.trim().length,
+        score: window.S ? null : null,
+        finalScore: (typeof S !== 'undefined') ? S.finalScore : null,
+        wrong: (typeof S !== 'undefined') ? S.wrongAnswers : null,
+        hintPen: (typeof S !== 'undefined') ? S.hintPenalty : null,
+      };
+    });
+    if (ui.title && ui.statsLen > 20) sink.ok(`${tag} S9 result screen rendered (${ui.statsLen} chars)`);
+    else sink.ko(`${tag} S9 result screen thin`, JSON.stringify(ui).slice(0, 200));
 
     // ── STEP 16 — no runtime errors during the journey ─────────────────────
     const real = consoleErrors.slice();
