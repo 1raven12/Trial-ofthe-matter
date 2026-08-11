@@ -157,13 +157,24 @@ async function answerModal(page, lang, budget) {
     if (!ov.classList.contains('show')) return null;
     const inp = document.getElementById('modal-input');
     const btns = [...document.querySelectorAll('#modal-choices button')];
+    const sub = document.getElementById('modal-submit');
     return {
       hasInput: !!inp && inp.style.display !== 'none',
       choices: btns.length,
       prompt: document.querySelector('#modal-body .modal-prompt')?.textContent || '',
+      // The game keeps a task modal open after you answer, showing "waiting for
+      // teammates" until every player has finished it. In that state the choices
+      // are cleared and submit is disabled — there is nothing left to answer.
+      submitDisabled: !!sub && sub.disabled,
+      feedback: document.getElementById('modal-feedback')?.textContent || '',
     };
   });
   if (!info) return null;
+
+  // Already answered by this player: nothing more to do here. Returning null
+  // ends the answer loop instead of re-submitting the same answer eight times.
+  const answeredAlready = (info.choices === 0 && (!info.hasInput || info.submitDisabled));
+  if (answeredAlready) return null;
 
   const qkey = identify(lang, info.prompt);
   const wrongOnPurpose = budget && budget.mistakes > 0 && !!qkey;
@@ -210,8 +221,14 @@ const waitModal  = (page, want, ms = 1600) => page.waitForFunction(
 ).then(() => true).catch(() => false);
 
 async function closeModalIfOpen(page) {
-  const open = await page.evaluate(() => document.getElementById('modal-overlay').classList.contains('show'));
-  if (open) { await page.click('#modal-cancel', { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(120); }
+  // Confirm the modal is really gone. A close that silently fails leaves every
+  // later hotspot click landing behind a stale overlay, which wedges the run.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (!await modalOpen(page)) return true;
+    await page.click('#modal-cancel', { timeout: 4000 }).catch(() => {});
+    if (await waitModal(page, false, 900)) return true;
+  }
+  return !(await modalOpen(page));
 }
 
 /** Navigate to a room using the visible navigation buttons. */
