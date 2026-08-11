@@ -246,7 +246,10 @@ async function workRoom(page, lang, budget) {
   }
   const n = await page.evaluate(() => document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)').length);
   for (let i = 0; i < n; i++) {
-    if (!await waitPlayable(page, 20000)) return;
+    if (!await waitPlayable(page, 20000)) {
+      if (process.env.JOURNEY_DEBUG) process.stderr.write(`      [bail-inner] hotspot ${i}\n`);
+      return;
+    }
     const clicked = await page.evaluate(i => {
       const b = document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)')[i];
       if (!b || b.disabled) return false;
@@ -254,6 +257,16 @@ async function workRoom(page, lang, budget) {
     }, i);
     if (!clicked) continue;
     await page.waitForTimeout(260);
+    if (process.env.JOURNEY_DEBUG) {
+      const st = await page.evaluate(() => ({
+        room: S.room,
+        open: document.getElementById('modal-overlay').classList.contains('show'),
+        prompt: document.querySelector('#modal-body .modal-prompt')?.textContent?.slice(0, 50) || null,
+        choices: document.querySelectorAll('#modal-choices button').length,
+        motto: !!(S.solved && S.solved.motto_challenge),
+      })).catch(() => null);
+      process.stderr.write(`      [click] hotspot ${i}/${n} ${JSON.stringify(st)}\n`);
+    }
     // A task can chain (count → disposition, Q1 → Q2) and a deliberate wrong
     // answer leaves the same question open, so keep answering until it closes.
     for (let step = 0; step < 8; step++) {
