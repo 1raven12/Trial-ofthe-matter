@@ -250,11 +250,18 @@ async function workRoom(page, lang, budget) {
       if (process.env.JOURNEY_DEBUG) process.stderr.write(`      [bail-inner] hotspot ${i}\n`);
       return;
     }
+    const pre = process.env.JOURNEY_DEBUG ? await page.evaluate(i => {
+      const el = document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)')[i];
+      return { room: S.room, label: el ? el.textContent.trim().slice(0, 28) : null,
+               modalAlreadyOpen: document.getElementById('modal-overlay').classList.contains('show'),
+               motto: !!(S.solved && S.solved.motto_challenge) };
+    }, i).catch(() => null) : null;
     const clicked = await page.evaluate(i => {
       const b = document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)')[i];
       if (!b || b.disabled) return false;
       b.click(); return true;
     }, i);
+    if (process.env.JOURNEY_DEBUG) process.stderr.write(`      [pre] hs ${i}/${n} clicked=${clicked} ${JSON.stringify(pre)}\n`);
     if (!clicked) continue;
     await page.waitForTimeout(260);
     if (process.env.JOURNEY_DEBUG) {
@@ -269,14 +276,26 @@ async function workRoom(page, lang, budget) {
     }
     // A task can chain (count → disposition, Q1 → Q2) and a deliberate wrong
     // answer leaves the same question open, so keep answering until it closes.
+    let attempts = 0, exitWhy = 'exhausted';
     for (let step = 0; step < 8; step++) {
       const handled = await answerModal(page, lang, budget);
-      if (handled == null) break;
+      attempts++;
+      if (handled == null) { exitWhy = 'handler-returned-null'; break; }
       await page.waitForTimeout(300);
       const stillOpen = await page.evaluate(() => document.getElementById('modal-overlay').classList.contains('show'));
-      if (!stillOpen) break;
+      if (!stillOpen) { exitWhy = 'modal-closed'; break; }
     }
-    await closeModalIfOpen(page);
+    if (process.env.JOURNEY_DEBUG) {
+      const before = await page.evaluate(() => document.getElementById('modal-overlay').classList.contains('show')).catch(() => null);
+      await closeModalIfOpen(page);
+      const post = await page.evaluate(() => ({
+        stillOpen: document.getElementById('modal-overlay').classList.contains('show'),
+        room: S.room, motto: !!(S.solved && S.solved.motto_challenge),
+      })).catch(() => null);
+      process.stderr.write(`      [post] hs ${i}/${n} attempts=${attempts} exit=${exitWhy} openBeforeClose=${before} ${JSON.stringify(post)}\n`);
+    } else {
+      await closeModalIfOpen(page);
+    }
   }
 }
 
