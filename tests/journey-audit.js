@@ -194,6 +194,17 @@ async function answerModal(page, lang, budget) {
 }
 
 const modalOpen  = page => page.evaluate(() => document.getElementById('modal-overlay').classList.contains('show'));
+
+/**
+ * A paused game ignores every hotspot click — renderRoom's handler starts with
+ * `if (S.paused || S.over) return;`. The game pauses whenever a roster member
+ * drops, which can happen to any of the three contexts during a long run, and
+ * socket.io reconnects on its own. So wait for play to resume rather than
+ * clicking into a game that cannot respond.
+ */
+const waitPlayable = (page, ms = 30000) => page.waitForFunction(
+  () => typeof S !== 'undefined' && !S.paused && !S.over, { timeout: ms }
+).then(() => true).catch(() => false);
 const waitModal  = (page, want, ms = 1600) => page.waitForFunction(
   w => document.getElementById('modal-overlay').classList.contains('show') === w, want, { timeout: ms }
 ).then(() => true).catch(() => false);
@@ -225,8 +236,10 @@ async function gotoRoom(page, roomId) {
 
 /** Click every hotspot in the current room, answering whatever opens. */
 async function workRoom(page, lang, budget) {
+  if (!await waitPlayable(page)) return;      // still paused — nothing can be clicked
   const n = await page.evaluate(() => document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)').length);
   for (let i = 0; i < n; i++) {
+    if (!await waitPlayable(page, 20000)) return;
     const clicked = await page.evaluate(i => {
       const b = document.querySelectorAll('#hotspots .hotspot-btn:not(.hint-btn)')[i];
       if (!b || b.disabled) return false;
@@ -492,7 +505,14 @@ async function journey(browser, lang, groupId, pin) {
     });
     if (uiPuzzles === SCORED_PUZZLES.length && solved.game_won)
       sink.ok(`${tag} S8 all ${SCORED_PUZZLES.length} puzzles completed by clicking, game won`);
-    else { sink.ko(`${tag} S8 playthrough incomplete`, `${uiPuzzles}/${SCORED_PUZZLES.length} solved, game_won=${!!solved.game_won}`); return sink; }
+    else {
+      const st = await Promise.all(pages.map(pg => pg.evaluate(() => ({
+        room: S.room, paused: S.paused, over: S.over, online: (S.membersOnline || []).length,
+      })).catch(() => null)));
+      sink.ko(`${tag} S8 playthrough incomplete`,
+        `${uiPuzzles}/${SCORED_PUZZLES.length} solved, game_won=${!!solved.game_won}; players=${JSON.stringify(st)}`);
+      return sink;
+    }
 
     if (mistakeMade) sink.ok(`${tag} S8 deliberate wrong answer exercised`);
     else sink.ko(`${tag} S8 no wrong answer exercised`);
