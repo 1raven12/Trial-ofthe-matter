@@ -185,8 +185,23 @@ async function answerModal(page, lang, budget) {
     if (pid == null) { await page.click('#modal-cancel', { timeout: 5000 }).catch(() => {}); return null; }
     let idx = CORRECT[pid];
     if (wrongOnPurpose) idx = (idx + 1) % info.choices;
+    if (process.env.JOURNEY_DEBUG) {
+      const target = await page.evaluate(j => {
+        const b = document.querySelectorAll('#modal-choices button')[j];
+        return b ? { label: b.textContent.trim().slice(0, 28), disabled: b.disabled } : null;
+      }, idx).catch(() => null);
+      process.stderr.write(`      [answer] pid=${pid} idx=${idx} wrong=${wrongOnPurpose} ${JSON.stringify(target)}\n`);
+    }
     await page.locator('#modal-choices button').nth(idx).click({ timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(300);
+    if (process.env.JOURNEY_DEBUG) {
+      const after = await page.evaluate(() => ({
+        choices: document.querySelectorAll('#modal-choices button').length,
+        fb: (document.getElementById('modal-feedback')?.textContent || '').slice(0, 36),
+        wrong: S.wrongAnswers,
+      })).catch(() => null);
+      process.stderr.write(`      [answer-after] ${JSON.stringify(after)}\n`);
+    }
     return qkey;
   }
 
