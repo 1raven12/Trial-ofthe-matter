@@ -7,3 +7,16 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+
+    # Results are written to data/groups.json on the service filesystem. Without
+    # a mounted disk that filesystem is ephemeral: every deploy, restart or
+    # platform recycle resets it to the git checkout and every completed game is
+    # lost. This disk makes that directory survive.
+    #
+    # mountPath must be the absolute path of <repo>/data on the service. Confirm
+    # it with `pwd` in the Render shell before the first deploy — a wrong path
+    # mounts somewhere unused and silently keeps the ephemeral behaviour.
+    disk:
+      name: game-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

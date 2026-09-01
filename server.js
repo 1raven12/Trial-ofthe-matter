@@ -16,6 +16,23 @@ const io         = new SocketIO(httpServer, {
 
 const PORT      = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'groups.json');
+const SEED_FILE = path.join(__dirname, 'seed', 'groups.json');
+
+/**
+ * A persistent disk mounts empty the first time it is attached, hiding the
+ * copy of data/groups.json that ships in the repo. Seed the roster once so the
+ * groups and their PINs survive that first deploy.
+ *
+ * This only ever writes when the file is absent. It never overwrites a
+ * groups.json that already exists, so completed results on the disk are safe.
+ */
+function ensureDataFile() {
+  if (fs.existsSync(DATA_FILE)) return;
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  fs.copyFileSync(SEED_FILE, DATA_FILE);
+  console.log(`[init] ${DATA_FILE} was missing — seeded the 256-group roster from seed/groups.json`);
+}
+ensureDataFile();
 
 // ── Timer constants ─────────────────────────────────────────────────────────
 const REG_SECS   = 30 * 60;   // 1800 — regulation time (30 min)
