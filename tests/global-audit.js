@@ -28,6 +28,8 @@ const SUITES = [
     args: ['tests/layout-audit.js'] },
   { name: 'real-player entry journey — 17 locales, three live teammates',
     args: ['tests/journey-audit.js'] },
+  { name: 'backup & restore safety — results can never be lost or overwritten',
+    args: ['tests/backup-restore.js'] },
 ];
 
 /** Static checks that need no runtime: syntax + structural invariants. */
