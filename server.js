@@ -16,6 +16,23 @@ const io         = new SocketIO(httpServer, {
 
 const PORT      = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'groups.json');
+const SEED_FILE = path.join(__dirname, 'seed', 'groups.json');
+
+/**
+ * A persistent disk mounts empty the first time it is attached, hiding the
+ * copy of data/groups.json that ships in the repo. Seed the roster once so the
+ * groups and their PINs survive that first deploy.
+ *
+ * This only ever writes when the file is absent. It never overwrites a
+ * groups.json that already exists, so completed results on the disk are safe.
+ */
+function ensureDataFile() {
+  if (fs.existsSync(DATA_FILE)) return;
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  fs.copyFileSync(SEED_FILE, DATA_FILE);
+  console.log(`[init] ${DATA_FILE} was missing — seeded the 256-group roster from seed/groups.json`);
+}
+ensureDataFile();
 
 // ── Timer constants ─────────────────────────────────────────────────────────
 const REG_SECS   = 30 * 60;   // 1800 — regulation time (30 min)
@@ -489,6 +506,73 @@ app.get('/api/admin/groups', requireAdmin, (req, res) => {
     };
   });
   res.json(groups);
+});
+
+/**
+ * Admin: raw backup of the persisted dataset.
+ *
+ * Returns exactly what is on disk, so a snapshot can be restored verbatim.
+ * adminPassword is stripped — it is a credential, not game data, and backups
+ * are committed to a git repository.
+ *
+ * `completed` is included so an automated backup can refuse to overwrite a
+ * good snapshot with a smaller one after a filesystem reset.
+ */
+app.get('/api/admin/backup', requireAdmin, (req, res) => {
+  const data = load();
+  const { adminPassword, ...rest } = data;
+  res.json({
+    exportedAt: new Date().toISOString(),
+    groupCount: data.groups.length,
+    completed:  data.groups.filter(g => g.score !== null && g.score !== undefined).length,
+    data:       rest,
+  });
+});
+
+/**
+ * Admin: restore a dataset produced by /api/admin/backup.
+ *
+ * Guarded three ways, because this is the one route that can overwrite every
+ * result at once:
+ *   1. the payload must carry a full 256-group roster;
+ *   2. the file currently on disk is copied aside first, so a mistaken
+ *      restore is always reversible from the service filesystem;
+ *   3. a restore that would REDUCE the number of completed results is refused
+ *      unless the caller explicitly passes force:true.
+ *
+ * adminPassword is never taken from the payload — backups do not carry it and
+ * the live credential must not be replaceable through this route.
+ */
+app.post('/api/admin/restore', requireAdmin, (req, res) => {
+  const payload = (req.body && req.body.data) || req.body;
+  const force   = !!(req.body && req.body.force);
+
+  if (!payload || !Array.isArray(payload.groups)) {
+    return res.status(400).json({ error: 'Payload must contain a groups array.' });
+  }
+  if (payload.groups.length !== 256) {
+    return res.status(400).json({ error: `Expected 256 groups, received ${payload.groups.length}.` });
+  }
+
+  const current   = load();
+  const done      = gs => gs.filter(g => g.score !== null && g.score !== undefined).length;
+  const nowDone   = done(current.groups);
+  const afterDone = done(payload.groups);
+
+  if (afterDone < nowDone && !force) {
+    return res.status(409).json({
+      error: `Refusing to restore: the live dataset has ${nowDone} completed games and the payload has ${afterDone}. Pass force:true only if you intend to discard results.`,
+      liveCompleted: nowDone, payloadCompleted: afterDone,
+    });
+  }
+
+  const aside = DATA_FILE.replace(/\.json$/, `.pre-restore-${Date.now()}.json`);
+  fs.copyFileSync(DATA_FILE, aside);
+
+  save({ ...payload, adminPassword: current.adminPassword });
+
+  console.log(`[restore] ${nowDone} → ${afterDone} completed; previous file kept at ${aside}`);
+  res.json({ ok: true, restored: payload.groups.length, completedBefore: nowDone, completedAfter: afterDone, previousFile: aside });
 });
 
 // Admin: reset a group — preserves trial history

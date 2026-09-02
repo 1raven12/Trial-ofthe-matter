@@ -1,0 +1,74 @@
+name: Back up live game results
+
+# Pulls the dataset off the running Render service and commits it to this
+# repository, so a completed game is never held in only one place.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   GAME_URL        https://<your-service>.onrender.com
+#   ADMIN_PASSWORD  the admin password the live service accepts
+#
+# The job fails on purpose if the live service reports fewer completed games
+# than the stored backup — that means results were lost, and the failure is
+# the notification. The stored backup is never overwritten in that case.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes (UTC)
+  workflow_dispatch:          # and on demand from the Actions tab
+
+concurrency:
+  group: backup-live-results
+  cancel-in-progress: false   # never interrupt a run that may be mid-write
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check the secrets are configured
+        env:
+          GAME_URL: ${{ secrets.GAME_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$GAME_URL" ]       || missing="$missing GAME_URL"
+          [ -n "$ADMIN_PASSWORD" ] || missing="$missing ADMIN_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "Missing repository secret(s):$missing"
+            echo "Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Pull the live dataset
+        env:
+          GAME_URL: ${{ secrets.GAME_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: node scripts/backup-from-render.js
+
+      - name: Commit the snapshot if it changed
+        run: |
+          if [ -z "$(git status --porcelain backups)" ]; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backups
+          completed=$(node -e "const s=require('./backups/groups.latest.json');console.log(s.completed)")
+          git commit -m "chore(backup): live snapshot — ${completed} completed games"
+          # The schedule can overlap a human push; rebase rather than force.
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            echo "push attempt $i failed; retrying"
+            sleep $((2 ** i))
+          done
+          exit 1
