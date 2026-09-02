@@ -32,6 +32,8 @@ const SUITES = [
     args: ['tests/backup-restore.js'] },
   { name: 'static exposure — nothing private reachable over plain HTTP',
     args: ['tests/static-exposure.js'] },
+  { name: 'append-only results log — a result survives reset and replay',
+    args: ['tests/results-log.js'] },
 ];
 
 /** Static checks that need no runtime: syntax + structural invariants. */
