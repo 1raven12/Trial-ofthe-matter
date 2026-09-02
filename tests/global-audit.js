@@ -30,6 +30,8 @@ const SUITES = [
     args: ['tests/journey-audit.js'] },
   { name: 'backup & restore safety — results can never be lost or overwritten',
     args: ['tests/backup-restore.js'] },
+  { name: 'static exposure — nothing private reachable over plain HTTP',
+    args: ['tests/static-exposure.js'] },
 ];
 
 /** Static checks that need no runtime: syntax + structural invariants. */

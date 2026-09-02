@@ -60,6 +60,27 @@ const HQ_ANSWERS = {
 const HQ_IDS = Object.keys(HQ_ANSWERS);
 
 app.use(express.json());
+
+/**
+ * The site is served straight from the repository root, so express.static
+ * would hand out everything next to index.html — including data/groups.json,
+ * which holds all 256 PINs and the admin password, and data/sessions.json,
+ * which holds live game state. Both were readable by anyone who knew the URL.
+ *
+ * Block the directories that are not part of the player-facing site before
+ * static file handling runs. The API routes below are unaffected: they are
+ * mounted under /api and never match. Group and session data remain available
+ * through the authenticated admin routes.
+ */
+const PRIVATE_PATH = /^\/(?:data|seed|backups|scripts|tests|node_modules|\.git|\.github)(?:\/|$)/;
+app.use((req, res, next) => {
+  // Blocked directories, and any dotfile (.env, .gitignore, editor leftovers).
+  if (PRIVATE_PATH.test(req.path) || /(?:^|\/)\.[^/]/.test(req.path)) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  next();
+});
+
 app.use(express.static(__dirname));
 
 // ── Token store ────────────────────────────────────────────────────────────
