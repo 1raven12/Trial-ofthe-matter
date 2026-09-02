@@ -17,6 +17,7 @@ const io         = new SocketIO(httpServer, {
 const PORT      = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data', 'groups.json');
 const SEED_FILE = path.join(__dirname, 'seed', 'groups.json');
+const RESULTS_LOG = path.join(__dirname, 'data', 'results.log');
 
 /**
  * A persistent disk mounts empty the first time it is attached, hiding the
@@ -130,6 +131,42 @@ function loadSessions() {
 // ── Data helpers ───────────────────────────────────────────────────────────
 function load() { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
 function save(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2)); }
+
+/**
+ * Append-only record of every game ever completed.
+ *
+ * groups.json holds one row per group, so a row can be replaced by an admin
+ * reset, a replay of the trial group, or a corrupted write. This file is only
+ * ever appended to, one JSON object per line, and is never rewritten — so the
+ * full history survives all of those. It sits under data/, which is on the
+ * persistent disk.
+ *
+ * The same record is also written to stdout, which puts a copy in the hosting
+ * platform's log stream: a record that lives off this filesystem entirely and
+ * survives even the disk being lost.
+ *
+ * A failure here must never cost a player their score, so the write is
+ * best-effort — groups.json is still the primary record and is written by the
+ * caller regardless.
+ */
+/** Read the append-only log back. A damaged line is skipped, never fatal. */
+function readResultsLog() {
+  if (!fs.existsSync(RESULTS_LOG)) return [];
+  return fs.readFileSync(RESULTS_LOG, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map(line => { try { return JSON.parse(line); } catch { return null; } })
+    .filter(Boolean);
+}
+
+function appendResult(record) {
+  console.log('[result] ' + JSON.stringify(record));
+  try {
+    fs.appendFileSync(RESULTS_LOG, JSON.stringify(record) + '\n');
+  } catch (e) {
+    console.error('[result] could not append to results.log:', e.message);
+  }
+}
 
 // ── Auth middleware ────────────────────────────────────────────────────────
 function requireGroup(req, res, next) {
@@ -378,6 +415,13 @@ app.post('/api/game/submit', requireGroup, (req, res) => {
     timeSpentSec, completedAt, resumed,
   });
 
+  appendResult({
+    groupId: group.id, name: group.name, score, puzzlesDone, wrongAnswers,
+    hintPenalty, hiddenFound, hiddenCorrect, hiddenBonus, won: !!won,
+    secondsRemaining: secsLeft, timeSpentSec, completedAt, resumed,
+    roster: sess.lockedRoster || [], via: 'submit',
+  });
+
   save(data);
 
   io.to(req.groupId).emit('game_over', {
@@ -547,7 +591,21 @@ app.get('/api/admin/backup', requireAdmin, (req, res) => {
     groupCount: data.groups.length,
     completed:  data.groups.filter(g => g.score !== null && g.score !== undefined).length,
     data:       rest,
+    // The append-only history travels with the backup, so a result that was
+    // later reset or replayed is still recoverable from the stored snapshot.
+    resultsLog: readResultsLog(),
   });
+});
+
+/**
+ * Admin: the append-only completion history.
+ *
+ * Every game ever finished, oldest first, including results that groups.json
+ * no longer shows because the group was reset or the trial group replayed.
+ */
+app.get('/api/admin/results-log', requireAdmin, (req, res) => {
+  const entries = readResultsLog();
+  res.json({ count: entries.length, entries });
 });
 
 /**
@@ -1089,6 +1147,13 @@ io.on('connection', (socket) => {
           score, puzzlesDone: gs.puzzlesDone, wrongAnswers: gs.wrongAnswers,
           hintPenalty: gs.hintPenalty || 0, hiddenFound, hiddenCorrect, hiddenBonus,
           won: false, secondsRemaining: 0, timeSpentSec, completedAt, resumed: !!gs.resumed,
+        });
+        appendResult({
+          groupId: group.id, name: group.name, score, puzzlesDone: gs.puzzlesDone,
+          wrongAnswers: gs.wrongAnswers, hintPenalty: gs.hintPenalty || 0,
+          hiddenFound, hiddenCorrect, hiddenBonus, won: false,
+          secondsRemaining: 0, timeSpentSec, completedAt, resumed: !!gs.resumed,
+          roster: gs.lockedRoster || [], via: 'hardstop',
         });
         save(data);
       }
